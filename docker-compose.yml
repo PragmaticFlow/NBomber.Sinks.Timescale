@@ -9,4 +9,4 @@ services:
     environment:
       POSTGRES_DB: timescaledb
       POSTGRES_USER: andrii
-      POSTGRES_PASSWORD: mypass
+      POSTGRES_PASSWORD: myPass
