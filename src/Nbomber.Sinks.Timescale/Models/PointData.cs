@@ -21,7 +21,7 @@ public class PointData
     
     public string SessionId { get; set; }
 
-    public int AllRequestCountAll { get; set; }
+    public int AllRequestCount { get; set; }
     public long AllDataTransferAll { get; set; }
 
     public double OkLatencyMax { get; set; }
@@ -33,6 +33,9 @@ public class PointData
     public double OkLatencyPercent95 { get; set; }
     public double OkLatencyPercent99 { get; set; }
 
+    public int OkRequestCount { get; set; }
+    public double OkRequestRps { get; set; }
+    
     public long OkDataTransferMin { get; set; }
     public long OkDataTransferMean { get; set; }
     public long OkDataTransferMax { get; set; }
