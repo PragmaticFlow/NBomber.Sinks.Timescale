@@ -37,7 +37,7 @@ public class TimescaleDbSink : IReportingSink
         _logger = context.Logger.ForContext<TimescaleDbSink>();
         _context = context;
 
-        var config = infraConfig?.GetSection("InfluxDBSink").Get<TimescaleDbSinkConfig>();
+        var config = infraConfig?.GetSection("TimescaleDbSink").Get<TimescaleDbSinkConfig>();
         if (config != null)
         {
             _timescaleDbContext = new TimescaleDbContext(config.ConnectionString);
