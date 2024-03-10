@@ -10,3 +10,8 @@ services:
       POSTGRES_DB: timescaledb
       POSTGRES_USER: andrii
       POSTGRES_PASSWORD: myPass
+      
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"

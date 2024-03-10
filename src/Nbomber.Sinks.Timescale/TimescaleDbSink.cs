@@ -51,6 +51,8 @@ public class TimescaleDbSink : IReportingSink
                 $"Reporting Sink {SinkName} has problems with initialization. The problem could be related to invalid config structure.");
         }
             
+        _timescaleDbContext.Database.EnsureCreated();
+        
         return Task.CompletedTask;
     }
 
@@ -60,15 +62,17 @@ public class TimescaleDbSink : IReportingSink
         {
             var point = new PointData
             {
+                Time = DateTime.UtcNow,
                 Measurement = "nbomber",
                 ClusterNodeCount = 1,
                 ClusterNodeCpuCount = _context.GetNodeInfo().CoresCount,
             };
             
             AddTestInfoTags(point);
-
+           
             await _timescaleDbContext.Points.AddAsync(point);
             await _timescaleDbContext.SaveChangesAsync();
+            
         }
     }
 
@@ -95,6 +99,7 @@ public class TimescaleDbSink : IReportingSink
 
     private Task SaveScenarioStats(ScenarioStats[] stats)
     {
+        
         if (_timescaleDbContext == null) return Task.CompletedTask;
         
         var updatedStats = stats.Select(AddGlobalInfoStep).ToArray();
@@ -107,8 +112,10 @@ public class TimescaleDbSink : IReportingSink
 
         var statusCodes = stats.SelectMany(MapStatusCodes).ToArray();
         var addStatusCodes = _timescaleDbContext.Points.AddRangeAsync(statusCodes);
-
-        return Task.WhenAll(addRealtimeStats, addLatencyCounts, addStatusCodes);
+        
+        Task.WhenAll(addRealtimeStats, addLatencyCounts, addStatusCodes);
+        
+        return _timescaleDbContext.SaveChangesAsync();
     }
 
     private ScenarioStats AddGlobalInfoStep(ScenarioStats scnStats)
@@ -135,7 +142,8 @@ public class TimescaleDbSink : IReportingSink
 
             var point = new PointData
             {
-                Measurement = "nbomber",
+                Time = DateTime.UtcNow,
+                Measurement = "nbomber", 
                 AllRequestCount = step.Ok.Request.Count + step.Fail.Request.Count,
                 AllDataTransferAll = step.Ok.DataTransfer.AllBytes + step.Fail.DataTransfer.AllBytes,
                 
@@ -197,6 +205,7 @@ public class TimescaleDbSink : IReportingSink
     {
         var point = new PointData
         {
+            Time = DateTime.UtcNow,
             Measurement = "nbomber",
             LatencyCountLessOrEq800 = scnStats.Ok.Latency.LatencyCount.LessOrEq800,
             LatencyCountMore800Less1200 = scnStats.Ok.Latency.LatencyCount.More800Less1200,
@@ -217,8 +226,9 @@ public class TimescaleDbSink : IReportingSink
             {
                 var point = new PointData
                 {
+                    Time = DateTime.UtcNow,
                     Measurement = "nbomber",
-                    StatusCodeStatus = s.StatusCode,
+                    StatusCodeStatus = s.StatusCode ?? "0",
                     StatusCodeCount = s.Count,
                     Scenario = scnStats.ScenarioName
                 };

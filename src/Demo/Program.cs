@@ -1,5 +1,6 @@
 ﻿using NBomber.CSharp;
 using NBomber.Sinks.Timescale;
+using Serilog;
 
 new TimescaleDBReportingExample().Run();
 
@@ -7,7 +8,7 @@ public class TimescaleDBReportingExample
 {
     private readonly TimescaleDbSink _timescaleDbSink = 
         new("Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
-
+    
     public void Run()
     {
         var scenario = Scenario.Create("user_flow_scenario", async context =>
@@ -32,15 +33,9 @@ public class TimescaleDBReportingExample
 
                 return Response.Ok(statusCode: "201");
             })
-            .WithWarmUpDuration(TimeSpan.FromSeconds(10))
             .WithLoadSimulations(
-                Simulation.RampingInject(rate: 200, interval: TimeSpan.FromSeconds(1),
-                    during: TimeSpan.FromMinutes(1)), // rump-up to rate 200
-                Simulation.Inject(rate: 200, interval: TimeSpan.FromSeconds(1),
-                    during: TimeSpan.FromSeconds(30)), // keep injecting with rate 200
-                Simulation.RampingInject(rate: 0, interval: TimeSpan.FromSeconds(1),
-                    during: TimeSpan.FromMinutes(1)) // rump-down to rate 0
-            );
+                Simulation.KeepConstant(1, TimeSpan.FromSeconds(30))
+            ).WithoutWarmUp();
 
         NBomberRunner
             .RegisterScenarios(scenario)

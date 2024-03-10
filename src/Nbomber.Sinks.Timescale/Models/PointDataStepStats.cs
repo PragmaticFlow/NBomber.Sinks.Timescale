@@ -1,29 +1,15 @@
 namespace NBomber.Sinks.Timescale.Models;
 
-public class PointData
+public class PointDataStepStats : PointDataBase
 {
-     public string Measurement { get; set; }
-
-    // Tegs
+    public string Scenario { get; set; } 
     
-    public string StatusCodeStatus { get; set; }
-    public string CurrentOperation { get; set; }
-    public string NodeType { get; set; }
-    public string TestSuite { get; set; }
-    public string TestName { get; set; }
-    public string ClusterId { get; set; }
-    public string Scenario { get; set; }
-    public string Step { get; set; }
-
-    // Fields
-    public int ClusterNodeCount { get; set; }
-    public int ClusterNodeCpuCount { get; set; }
-    
-    public string SessionId { get; set; }
-
     public int AllRequestCount { get; set; }
     public long AllDataTransferAll { get; set; }
-
+    
+    public int OkRequestCount { get; set; }
+    public double OkRequestRps { get; set; }
+    
     public double OkLatencyMax { get; set; }
     public double OkLatencyMean { get; set; }
     public double OkLatencyMin { get; set; }
@@ -32,9 +18,6 @@ public class PointData
     public double OkLatencyPercent75 { get; set; }
     public double OkLatencyPercent95 { get; set; }
     public double OkLatencyPercent99 { get; set; }
-
-    public int OkRequestCount { get; set; }
-    public double OkRequestRps { get; set; }
     
     public long OkDataTransferMin { get; set; }
     public long OkDataTransferMean { get; set; }
@@ -67,10 +50,4 @@ public class PointData
     public long FailDataTransferPercent99 { get; set; }
     
     public int SimulationValue { get; set; }
-
-    public int LatencyCountLessOrEq800 { get; set; }
-    public int LatencyCountMore800Less1200 { get; set; }
-    public int LatencyCountMoreOrEq1200 { get; set; }
-
-    public int StatusCodeCount { get; set; }
 }
