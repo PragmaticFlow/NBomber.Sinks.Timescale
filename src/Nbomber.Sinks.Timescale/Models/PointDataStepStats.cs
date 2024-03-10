@@ -3,6 +3,7 @@ namespace NBomber.Sinks.Timescale.Models;
 public class PointDataStepStats : PointDataBase
 {
     public string Scenario { get; set; } 
+    public string Step { get; set; }
     
     public int AllRequestCount { get; set; }
     public long AllDataTransferAll { get; set; }

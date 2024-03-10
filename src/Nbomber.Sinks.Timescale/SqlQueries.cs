@@ -2,7 +2,7 @@ using NBomber.Sinks.Timescale.Models;
 
 namespace NBomber.Sinks.Timescale;
 
-public class SqlQueries
+public static class SqlQueries
 {
      public static string CreatePointDataLatencyCountsTable => $@"
         CREATE TABLE IF NOT EXISTS latency_counts_points
@@ -20,6 +20,39 @@ public class SqlQueries
             {nameof(PointDataLatencyCounts.LatencyCountMore800Less1200)} INT,
             {nameof(PointDataLatencyCounts.LatencyCountMoreOrEq1200)} INT
         );";
+     
+     public static string InsertIntoPointDataLatencyCountsTable => $@"
+    INSERT INTO latency_counts_points
+    (
+        {nameof(PointDataBase.Measurement)},
+        {nameof(PointDataBase.Time)},
+        {nameof(PointDataBase.SessionId)},
+        {nameof(PointDataBase.CurrentOperation)},
+        {nameof(PointDataBase.NodeType)},
+        {nameof(PointDataBase.TestSuite)},
+        {nameof(PointDataBase.TestName)},
+        {nameof(PointDataBase.ClusterId)},
+        {nameof(PointDataLatencyCounts.Scenario)},
+        {nameof(PointDataLatencyCounts.LatencyCountLessOrEq800)},
+        {nameof(PointDataLatencyCounts.LatencyCountMore800Less1200)},
+        {nameof(PointDataLatencyCounts.LatencyCountMoreOrEq1200)}
+    )
+    VALUES
+    (
+        @{nameof(PointDataBase.Measurement)},
+        @{nameof(PointDataBase.Time)},
+        @{nameof(PointDataBase.SessionId)},
+        @{nameof(PointDataBase.CurrentOperation)},
+        @{nameof(PointDataBase.NodeType)},
+        @{nameof(PointDataBase.TestSuite)},
+        @{nameof(PointDataBase.TestName)},
+        @{nameof(PointDataBase.ClusterId)},
+        @{nameof(PointDataLatencyCounts.Scenario)},
+        @{nameof(PointDataLatencyCounts.LatencyCountLessOrEq800)},
+        @{nameof(PointDataLatencyCounts.LatencyCountMore800Less1200)},
+        @{nameof(PointDataLatencyCounts.LatencyCountMoreOrEq1200)}
+    );";
+
 
     public static string CreatePointDataStartTable => $@"
         CREATE TABLE IF NOT EXISTS start_points
@@ -35,6 +68,34 @@ public class SqlQueries
             {nameof(PointDataStart.ClusterNodeCount)} INT,
             {nameof(PointDataStart.ClusterNodeCpuCount)} INT
         );";
+    
+    public static string InsertIntoPointDataStartTable => $@"
+    INSERT INTO start_points
+    (
+        {nameof(PointDataBase.Measurement)},
+        {nameof(PointDataBase.Time)},
+        {nameof(PointDataBase.SessionId)},
+        {nameof(PointDataBase.CurrentOperation)},
+        {nameof(PointDataBase.NodeType)},
+        {nameof(PointDataBase.TestSuite)},
+        {nameof(PointDataBase.TestName)},
+        {nameof(PointDataBase.ClusterId)},
+        {nameof(PointDataStart.ClusterNodeCount)},
+        {nameof(PointDataStart.ClusterNodeCpuCount)}
+    )
+    VALUES
+    (
+        @{nameof(PointDataBase.Measurement)},
+        @{nameof(PointDataBase.Time)},
+        @{nameof(PointDataBase.SessionId)},
+        @{nameof(PointDataBase.CurrentOperation)},
+        @{nameof(PointDataBase.NodeType)},
+        @{nameof(PointDataBase.TestSuite)},
+        @{nameof(PointDataBase.TestName)},
+        @{nameof(PointDataBase.ClusterId)},
+        @{nameof(PointDataStart.ClusterNodeCount)},
+        @{nameof(PointDataStart.ClusterNodeCpuCount)}
+    );";
 
     public static string CreatePointDataStatusCodesTable => $@"
         CREATE TABLE IF NOT EXISTS status_codes_points
@@ -51,6 +112,37 @@ public class SqlQueries
             {nameof(PointDataStatusCodes.StatusCodeStatus)} TEXT,
             {nameof(PointDataStatusCodes.StatusCodeCount)} INT
         );";
+    
+    public static string InsertIntoPointDataStatusCodesTable => $@"
+    INSERT INTO status_codes_points
+    (
+        {nameof(PointDataBase.Measurement)},
+        {nameof(PointDataBase.Time)},
+        {nameof(PointDataBase.SessionId)},
+        {nameof(PointDataBase.CurrentOperation)},
+        {nameof(PointDataBase.NodeType)},
+        {nameof(PointDataBase.TestSuite)},
+        {nameof(PointDataBase.TestName)},
+        {nameof(PointDataBase.ClusterId)},
+        {nameof(PointDataStatusCodes.Scenario)},
+        {nameof(PointDataStatusCodes.StatusCodeStatus)},
+        {nameof(PointDataStatusCodes.StatusCodeCount)}
+    )
+    VALUES
+    (
+        @{nameof(PointDataBase.Measurement)},
+        @{nameof(PointDataBase.Time)},
+        @{nameof(PointDataBase.SessionId)},
+        @{nameof(PointDataBase.CurrentOperation)},
+        @{nameof(PointDataBase.NodeType)},
+        @{nameof(PointDataBase.TestSuite)},
+        @{nameof(PointDataBase.TestName)},
+        @{nameof(PointDataBase.ClusterId)},
+        @{nameof(PointDataStatusCodes.Scenario)},
+        @{nameof(PointDataStatusCodes.StatusCodeStatus)},
+        @{nameof(PointDataStatusCodes.StatusCodeCount)}
+    );";
+
     
     public static string CreatePointDataStepStatsTable => $@"
     CREATE TABLE IF NOT EXISTS step_stats_points
@@ -105,4 +197,107 @@ public class SqlQueries
         {nameof(PointDataStepStats.SimulationValue)} INT
     );";
 
+    public static string InsertIntoPointDataStepStatsTable => $@"
+    INSERT INTO step_stats_points
+    (
+        {nameof(PointDataBase.Measurement)},
+        {nameof(PointDataBase.Time)},
+        {nameof(PointDataBase.SessionId)},
+        {nameof(PointDataBase.CurrentOperation)},
+        {nameof(PointDataBase.NodeType)},
+        {nameof(PointDataBase.TestSuite)},
+        {nameof(PointDataBase.TestName)},
+        {nameof(PointDataBase.ClusterId)},
+        {nameof(PointDataStepStats.Scenario)},
+        {nameof(PointDataStepStats.AllRequestCount)},
+        {nameof(PointDataStepStats.AllDataTransferAll)},
+        {nameof(PointDataStepStats.OkRequestCount)},
+        {nameof(PointDataStepStats.OkRequestRps)},
+        {nameof(PointDataStepStats.OkLatencyMax)},
+        {nameof(PointDataStepStats.OkLatencyMean)},
+        {nameof(PointDataStepStats.OkLatencyMin)},
+        {nameof(PointDataStepStats.OkLatencyStdDev)},
+        {nameof(PointDataStepStats.OkLatencyPercent50)},
+        {nameof(PointDataStepStats.OkLatencyPercent75)},
+        {nameof(PointDataStepStats.OkLatencyPercent95)},
+        {nameof(PointDataStepStats.OkLatencyPercent99)},
+        {nameof(PointDataStepStats.OkDataTransferMin)},
+        {nameof(PointDataStepStats.OkDataTransferMean)},
+        {nameof(PointDataStepStats.OkDataTransferMax)},
+        {nameof(PointDataStepStats.OkDataTransferAll)},
+        {nameof(PointDataStepStats.OkDataTransferPercent50)},
+        {nameof(PointDataStepStats.OkDataTransferPercent75)},
+        {nameof(PointDataStepStats.OkDataTransferPercent95)},
+        {nameof(PointDataStepStats.OkDataTransferPercent99)},
+        {nameof(PointDataStepStats.FailRequestCount)},
+        {nameof(PointDataStepStats.FailRequestRps)},
+        {nameof(PointDataStepStats.FailLatencyMax)},
+        {nameof(PointDataStepStats.FailLatencyMean)},
+        {nameof(PointDataStepStats.FailLatencyMin)},
+        {nameof(PointDataStepStats.FailLatencyStdDev)},
+        {nameof(PointDataStepStats.FailLatencyPercent50)},
+        {nameof(PointDataStepStats.FailLatencyPercent75)},
+        {nameof(PointDataStepStats.FailLatencyPercent95)},
+        {nameof(PointDataStepStats.FailLatencyPercent99)},
+        {nameof(PointDataStepStats.FailDataTransferMin)},
+        {nameof(PointDataStepStats.FailDataTransferMean)},
+        {nameof(PointDataStepStats.FailDataTransferMax)},
+        {nameof(PointDataStepStats.FailDataTransferAll)},
+        {nameof(PointDataStepStats.FailDataTransferPercent50)},
+        {nameof(PointDataStepStats.FailDataTransferPercent75)},
+        {nameof(PointDataStepStats.FailDataTransferPercent95)},
+        {nameof(PointDataStepStats.FailDataTransferPercent99)},
+        {nameof(PointDataStepStats.SimulationValue)}
+    )
+    VALUES
+    (
+        @{nameof(PointDataBase.Measurement)},
+        @{nameof(PointDataBase.Time)},
+        @{nameof(PointDataBase.SessionId)},
+        @{nameof(PointDataBase.CurrentOperation)},
+        @{nameof(PointDataBase.NodeType)},
+        @{nameof(PointDataBase.TestSuite)},
+        @{nameof(PointDataBase.TestName)},
+        @{nameof(PointDataBase.ClusterId)},
+        @{nameof(PointDataStepStats.Scenario)},
+        @{nameof(PointDataStepStats.AllRequestCount)},
+        @{nameof(PointDataStepStats.AllDataTransferAll)},
+        @{nameof(PointDataStepStats.OkRequestCount)},
+        @{nameof(PointDataStepStats.OkRequestRps)},
+        @{nameof(PointDataStepStats.OkLatencyMax)},
+        @{nameof(PointDataStepStats.OkLatencyMean)},
+        @{nameof(PointDataStepStats.OkLatencyMin)},
+        @{nameof(PointDataStepStats.OkLatencyStdDev)},
+        @{nameof(PointDataStepStats.OkLatencyPercent50)},
+        @{nameof(PointDataStepStats.OkLatencyPercent75)},
+        @{nameof(PointDataStepStats.OkLatencyPercent95)},
+        @{nameof(PointDataStepStats.OkLatencyPercent99)},
+        @{nameof(PointDataStepStats.OkDataTransferMin)},
+        @{nameof(PointDataStepStats.OkDataTransferMean)},
+        @{nameof(PointDataStepStats.OkDataTransferMax)},
+        @{nameof(PointDataStepStats.OkDataTransferAll)},
+        @{nameof(PointDataStepStats.OkDataTransferPercent50)},
+        @{nameof(PointDataStepStats.OkDataTransferPercent75)},
+        @{nameof(PointDataStepStats.OkDataTransferPercent95)},
+        @{nameof(PointDataStepStats.OkDataTransferPercent99)},
+        @{nameof(PointDataStepStats.FailRequestCount)},
+        @{nameof(PointDataStepStats.FailRequestRps)},
+        @{nameof(PointDataStepStats.FailLatencyMax)},
+        @{nameof(PointDataStepStats.FailLatencyMean)},
+        @{nameof(PointDataStepStats.FailLatencyMin)},
+        @{nameof(PointDataStepStats.FailLatencyStdDev)},
+        @{nameof(PointDataStepStats.FailLatencyPercent50)},
+        @{nameof(PointDataStepStats.FailLatencyPercent75)},
+        @{nameof(PointDataStepStats.FailLatencyPercent95)},
+        @{nameof(PointDataStepStats.FailLatencyPercent99)},
+        @{nameof(PointDataStepStats.FailDataTransferMin)},
+        @{nameof(PointDataStepStats.FailDataTransferMean)},
+        @{nameof(PointDataStepStats.FailDataTransferMax)},
+        @{nameof(PointDataStepStats.FailDataTransferAll)},
+        @{nameof(PointDataStepStats.FailDataTransferPercent50)},
+        @{nameof(PointDataStepStats.FailDataTransferPercent75)},
+        @{nameof(PointDataStepStats.FailDataTransferPercent95)},
+        @{nameof(PointDataStepStats.FailDataTransferPercent99)},
+        @{nameof(PointDataStepStats.SimulationValue)}
+    );";
 }
