@@ -33,7 +33,7 @@ public class TimescaleDbSink : IReportingSink
         _connection = connection;
     }
     
-    public Task Init(IBaseContext context, IConfiguration infraConfig)
+    public async Task Init(IBaseContext context, IConfiguration infraConfig)
     {
         _logger = context.Logger.ForContext<TimescaleDbSink>();
         _context = context;
@@ -53,11 +53,11 @@ public class TimescaleDbSink : IReportingSink
         }
 
         _connection.Open();
-        
-        return Task.WhenAll(_connection.ExecuteAsync(SqlQueries.CreatePointDataStartTable),
-            _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable),
-            _connection.ExecuteAsync(SqlQueries.CreatePointDataLatencyCountsTable),
-            _connection.ExecuteAsync(SqlQueries.CreatePointDataStepStatsTable));
+
+        await _connection.ExecuteAsync(SqlQueries.CreatePointDataStartTable);
+        await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable);
+        await _connection.ExecuteAsync(SqlQueries.CreatePointDataLatencyCountsTable);
+        await _connection.ExecuteAsync(SqlQueries.CreatePointDataStepStatsTable);
     }
 
     public async Task Start()
@@ -103,23 +103,22 @@ public class TimescaleDbSink : IReportingSink
         point.ClusterId = testInfo.ClusterId;
     }
 
-    private Task SaveScenarioStats(ScenarioStats[] stats)
+    private async Task SaveScenarioStats(ScenarioStats[] stats)
     {
-        
-        if (_connection == null) return Task.CompletedTask;
-        
-        var updatedStats = stats.Select(AddGlobalInfoStep).ToArray();
 
-        var realtimeStats = updatedStats.SelectMany(MapStepsStats).ToArray();
-        var addRealtimeStats = _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataStepStatsTable, realtimeStats);
+        if (_connection != null)
+        {
+            var updatedStats = stats.Select(AddGlobalInfoStep).ToArray();
 
-        var latencyCounts = stats.Select(MapLatencyCount).ToArray();
-        var addLatencyCounts = _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataLatencyCountsTable, latencyCounts);
+            var realtimeStats = updatedStats.SelectMany(MapStepsStats).ToArray();
+            await _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataStepStatsTable, realtimeStats);
 
-        var statusCodes = stats.SelectMany(MapStatusCodes).ToArray();
-        var addStatusCodes = _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataStatusCodesTable, statusCodes);
-        
-        return Task.WhenAll(addRealtimeStats, addLatencyCounts, addStatusCodes);
+            var latencyCounts = stats.Select(MapLatencyCount).ToArray();
+            await _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataLatencyCountsTable, latencyCounts);
+
+            var statusCodes = stats.SelectMany(MapStatusCodes).ToArray();
+            await _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataStatusCodesTable, statusCodes);
+        }
     }
 
     private ScenarioStats AddGlobalInfoStep(ScenarioStats scnStats)
