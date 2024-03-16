@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using NBomber.Sinks.Timescale.Models;
 
@@ -50,7 +51,7 @@ public static class SqlQueries
             var point = points[i];
             insertQuery.Append(@$"
             ('{point.Measurement}',
-            '{point.Time:yyyy-MM-dd HH:mm:ss.fff}',
+            '{point.Time:yyyy-MM-dd HH:mm:ss.fff zzz}',
             '{point.SessionId}',
             '{point.CurrentOperation}',
             '{point.NodeType}',
@@ -58,9 +59,9 @@ public static class SqlQueries
             '{point.TestName}',
             '{point.ClusterId}',
             '{point.Scenario}',
-            {point.LatencyCountLessOrEq800},
-            {point.LatencyCountMore800Less1200},
-            {point.LatencyCountMoreOrEq1200})");
+            {point.LatencyCountLessOrEq800.ToString(CultureInfo.InvariantCulture)},
+            {point.LatencyCountMore800Less1200.ToString(CultureInfo.InvariantCulture)},
+            {point.LatencyCountMoreOrEq1200.ToString(CultureInfo.InvariantCulture)})");
 
             insertQuery.AppendLine(i < points.Length - 1 ? "," : ";");
         } 
@@ -157,7 +158,7 @@ public static class SqlQueries
             var point = points[i];
             insertQuery.Append(@$"
             ('{point.Measurement}',
-            '{point.Time:yyyy-MM-dd HH:mm:ss.fff}',
+            '{point.Time:yyyy-MM-dd HH:mm:ss.fff zzz}',
             '{point.SessionId}',
             '{point.CurrentOperation}',
             '{point.NodeType}',
@@ -285,6 +286,7 @@ public static class SqlQueries
             {nameof(PointDataStepStats.FailDataTransferPercent95)},
             {nameof(PointDataStepStats.FailDataTransferPercent99)},
             {nameof(PointDataStepStats.SimulationValue)}
+        )
         VALUES ");
         
         for (var i = 0; i < points.Length; i++)
@@ -292,26 +294,27 @@ public static class SqlQueries
             var point = points[i];
             insertQuery.Append(@$"
             ('{point.Measurement}',
-            '{point.Time:yyyy-MM-dd HH:mm:ss.fff}',
+            '{point.Time:yyyy-MM-dd HH:mm:ss.fff zzz}',
             '{point.SessionId}',
             '{point.CurrentOperation}',
             '{point.NodeType}',
             '{point.TestSuite}',
             '{point.TestName}',
             '{point.ClusterId}',
+            '{point.Step}',
             '{point.Scenario}',
             {point.AllRequestCount},
             {point.AllDataTransferAll},
             {point.OkRequestCount}, 
-            {point.OkRequestRps},
-            {point.OkLatencyMax},
-            {point.OkLatencyMean},
-            {point.OkLatencyMin},
-            {point.OkLatencyStdDev},
-            {point.OkLatencyPercent50},
-            {point.OkLatencyPercent75},
-            {point.OkLatencyPercent95},
-            {point.OkLatencyPercent99},
+            {point.OkRequestRps.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyMax.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyMean.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyMin.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyStdDev.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyPercent50.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyPercent75.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyPercent95.ToString(CultureInfo.InvariantCulture)},
+            {point.OkLatencyPercent99.ToString(CultureInfo.InvariantCulture)},
             {point.OkDataTransferMin},
             {point.OkDataTransferMean},
             {point.OkDataTransferMax},
@@ -320,16 +323,16 @@ public static class SqlQueries
             {point.OkDataTransferPercent75}, 
             {point.OkDataTransferPercent95}, 
             {point.OkDataTransferPercent99},
-            {point.FailRequestCount},
-            {point.FailRequestRps}, 
-            {point.FailLatencyMax}, 
-            {point.FailLatencyMean}, 
-            {point.FailLatencyMin},
-            {point.FailLatencyStdDev}, 
-            {point.FailLatencyPercent50}, 
-            {point.FailLatencyPercent75}, 
-            {point.FailLatencyPercent95},
-            {point.FailLatencyPercent99},
+            {point.FailRequestCount.ToString(CultureInfo.InvariantCulture)},
+            {point.FailRequestRps.ToString(CultureInfo.InvariantCulture)}, 
+            {point.FailLatencyMax.ToString(CultureInfo.InvariantCulture)}, 
+            {point.FailLatencyMean.ToString(CultureInfo.InvariantCulture)}, 
+            {point.FailLatencyMin.ToString(CultureInfo.InvariantCulture)},
+            {point.FailLatencyStdDev.ToString(CultureInfo.InvariantCulture)}, 
+            {point.FailLatencyPercent50.ToString(CultureInfo.InvariantCulture)}, 
+            {point.FailLatencyPercent75.ToString(CultureInfo.InvariantCulture)}, 
+            {point.FailLatencyPercent95.ToString(CultureInfo.InvariantCulture)},
+            {point.FailLatencyPercent99.ToString(CultureInfo.InvariantCulture)},
             {point.FailDataTransferMin}, 
             {point.FailDataTransferMean}, 
             {point.FailDataTransferMax}, 

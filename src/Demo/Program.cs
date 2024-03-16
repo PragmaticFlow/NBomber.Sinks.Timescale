@@ -61,35 +61,9 @@
              .WithLoadSimulations(
                  Simulation.KeepConstant(1, TimeSpan.FromSeconds(30))
              ).WithoutWarmUp();
-         
-         var scenario3 = Scenario.Create("user_flow_scenario3", async context =>
-             {
-                 var step1 = await Step.Run("login", context, async () =>
-                 {
-                     await Task.Delay(500);
-                     return Response.Ok(sizeBytes: 10, statusCode: "200");
-                 });
-
-                 var step2 = await Step.Run("get_product", context, async () =>
-                 {
-                     await Task.Delay(1000);
-                     return Response.Ok(sizeBytes: 20, statusCode: "200");
-                 });
-
-                 var step3 = await Step.Run("buy_product", context, async () =>
-                 {
-                     await Task.Delay(2000);
-                     return Response.Ok(sizeBytes: 30, statusCode: "200");
-                 });
-
-                 return Response.Ok(statusCode: "201");
-             })
-             .WithLoadSimulations(
-                 Simulation.KeepConstant(1, TimeSpan.FromSeconds(30))
-             ).WithoutWarmUp();
 
          NBomberRunner
-             .RegisterScenarios(scenario, scenario2, scenario3)
+             .RegisterScenarios(scenario, scenario2)
              //.LoadInfraConfig("infra-config.json")
              .WithReportingInterval(TimeSpan.FromSeconds(5))
              .WithReportingSinks(_timescaleDbSink)

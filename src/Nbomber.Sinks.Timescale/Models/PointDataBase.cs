@@ -10,6 +10,6 @@ public class PointDataBase
     public string CurrentOperation { get; set; }
     public string NodeType { get; set; } 
     public string TestSuite { get; set; } 
-    public string TestName { get; set; } 
-    public string ClusterId { get; set; } 
+    public string TestName { get; set; }
+    public string ClusterId { get; set; }
 }

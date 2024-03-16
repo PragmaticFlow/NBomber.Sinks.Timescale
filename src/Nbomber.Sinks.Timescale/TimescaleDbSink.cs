@@ -1,6 +1,5 @@
 using Dapper;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using NBomber.Contracts;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Models;
@@ -19,9 +18,6 @@ public class TimescaleDbSink : IReportingSink
     private ILogger _logger;
     private IBaseContext _context;
     private NpgsqlConnection _connection;
-
-    private StreamWriter _logFileWriter;
-    private ILoggerFactory _factory;
     
     public string SinkName => "NBomber.Sinks.TimescaleDb";
 
@@ -29,22 +25,6 @@ public class TimescaleDbSink : IReportingSink
 
     public TimescaleDbSink(string connectionString)
     {
-        _logFileWriter = new StreamWriter("psql_log.txt", append: true);
-        _factory = LoggerFactory.Create(builder =>
-        {
-            builder.AddSimpleConsole(options =>
-            {
-                options.IncludeScopes = true;
-                options.SingleLine = true;
-                options.TimestampFormat = "HH:mm:ss ";
-            });
-
-            builder.AddProvider(new CustomFileLoggerProvider(_logFileWriter));
-        });
-            
-            
-        NpgsqlLoggingConfiguration.InitializeLogging(_factory);
-        
         _connection = new NpgsqlConnection(connectionString);
     }
     
@@ -55,7 +35,6 @@ public class TimescaleDbSink : IReportingSink
     
     public async Task Init(IBaseContext context, IConfiguration infraConfig)
     {
-       
         _logger = context.Logger.ForContext<TimescaleDbSink>();
         _context = context;
 
@@ -67,15 +46,20 @@ public class TimescaleDbSink : IReportingSink
         
         if (_connection == null)
         {
-            _logger.Error("Reporting Sink {0} has problems with initialization. The problem could be related to invalid config structure.", SinkName);
-                
+            _logger.Error(
+                "Reporting Sink {0} has problems with initialization. The problem could be related to invalid config structure.",
+                SinkName);
+
             throw new Exception(
                 $"Reporting Sink {SinkName} has problems with initialization. The problem could be related to invalid config structure.");
         }
         
         _connection.Open();
         
-        await _connection.ExecuteAsync(SqlQueries.CreatePointDataStartTable + SqlQueries.CreatePointDataStatusCodesTable + SqlQueries.CreatePointDataLatencyCountsTable + SqlQueries.CreatePointDataStepStatsTable);
+        await _connection.ExecuteAsync(SqlQueries.CreatePointDataStartTable 
+                                       + SqlQueries.CreatePointDataStatusCodesTable
+                                       + SqlQueries.CreatePointDataLatencyCountsTable 
+                                       + SqlQueries.CreatePointDataStepStatsTable);
     }
 
     public async Task Start()
@@ -106,8 +90,6 @@ public class TimescaleDbSink : IReportingSink
     {
         _connection.Close();
         _connection.Dispose();
-        _logFileWriter.Dispose();
-        _factory.Dispose();
     }
 
     private void AddTestInfoTags(PointDataBase point)
@@ -251,7 +233,7 @@ public class TimescaleDbSink : IReportingSink
                 {
                     Time = DateTime.UtcNow,
                     Measurement = "nbomber",
-                    StatusCodeStatus = s.StatusCode ?? "0",
+                    StatusCodeStatus = s.StatusCode,
                     StatusCodeCount = s.Count,
                     Scenario = scnStats.ScenarioName
                 };
