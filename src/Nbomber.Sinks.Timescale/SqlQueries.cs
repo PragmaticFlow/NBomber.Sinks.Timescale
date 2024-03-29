@@ -68,6 +68,16 @@ public static class SqlQueries
     
         return insertQuery.ToString();
     }
+
+    public static string SelectFromPointDataLatencyCountsTable()
+    {
+        return @"
+        SELECT * FROM latency_counts_points
+        WHERE sessionid = @SessionId
+        AND time >= @StartTime
+        AND time <= @EndTime;
+        ";
+    }
     
     public static string CreatePointDataStartTable => $@"
         CREATE TABLE IF NOT EXISTS start_points
@@ -173,6 +183,16 @@ public static class SqlQueries
         } 
     
         return insertQuery.ToString();
+    }
+
+    public static string SelectFromPointDataStatusCodesTable()
+    {
+        return @"
+            SELECT * FROM status_codes_points
+            WHERE sessionid = @SessionId
+            AND time >= @StartTime
+            AND time <= @EndTime;
+        ";
     }
 
     public static string CreatePointDataStepStatsTable => $@"
@@ -347,5 +367,15 @@ public static class SqlQueries
         } 
         
         return insertQuery.ToString();
+    }
+
+    public static string SelectFromPointDataStepStatsTable()
+    {
+        return @"
+                SELECT * FROM step_stats_points
+                WHERE sessionid = @SessionId
+                AND time >= @StartTime
+                AND time <= @EndTime;
+            ";
     }
 }
