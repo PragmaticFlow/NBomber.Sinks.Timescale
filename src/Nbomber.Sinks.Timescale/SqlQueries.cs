@@ -25,7 +25,7 @@ public static class SqlQueries
     SELECT create_hypertable('latency_counts_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 hour'), if_not_exists => TRUE);
     CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON latency_counts_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
 
-    public static string InsertIntoPointDataLatencyCountsTable(PointDataLatencyCounts[] points)
+    public static string InsertIntoPointDataLatencyCountsTable(PointDataLatencyCounts[] points) 
     {
         var insertQuery = new StringBuilder();
         insertQuery.AppendLine($@"
@@ -75,7 +75,8 @@ public static class SqlQueries
         SELECT * FROM latency_counts_points
         WHERE sessionid = @SessionId
         AND time >= @StartTime
-        AND time <= @EndTime;
+        AND time <= @EndTime
+        LIMIT 120;
         ";
     }
     
@@ -191,7 +192,8 @@ public static class SqlQueries
             SELECT * FROM status_codes_points
             WHERE sessionid = @SessionId
             AND time >= @StartTime
-            AND time <= @EndTime;
+            AND time <= @EndTime
+            LIMIT 120;
         ";
     }
 
@@ -375,7 +377,8 @@ public static class SqlQueries
                 SELECT * FROM step_stats_points
                 WHERE sessionid = @SessionId
                 AND time >= @StartTime
-                AND time <= @EndTime;
+                AND time <= @EndTime
+                LIMIT 120;
             ";
     }
 }
