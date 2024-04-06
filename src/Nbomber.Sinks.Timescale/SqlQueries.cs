@@ -76,7 +76,8 @@ public static class SqlQueries
         WHERE sessionid = @SessionId
         AND time >= @StartTime
         AND time <= @EndTime
-        LIMIT 120;
+        ORDER BY Time DESC
+        LIMIT 121;
         ";
     }
     
@@ -193,7 +194,8 @@ public static class SqlQueries
             WHERE sessionid = @SessionId
             AND time >= @StartTime
             AND time <= @EndTime
-            LIMIT 120;
+            ORDER BY Time DESC
+            LIMIT 121;
         ";
     }
 
@@ -378,7 +380,8 @@ public static class SqlQueries
                 WHERE sessionid = @SessionId
                 AND time >= @StartTime
                 AND time <= @EndTime
-                LIMIT 120;
+                ORDER BY Time DESC
+                LIMIT 121;
             ";
     }
 }
