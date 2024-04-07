@@ -168,7 +168,7 @@
                              {
                                  SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
                                  EndTime = endTimeLatencyCounts,
-                                 StartTime = endTimeLatencyCounts - TimeSpan.FromMinutes(11)
+                                 StartTime = endTimeLatencyCounts - TimeSpan.FromMinutes(10)
                              });
 
                          var dataStatusCodes = connection2.QueryAsync<PointDataStatusCodes>(
@@ -176,7 +176,7 @@
                              {
                                  SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
                                  EndTime = endTimeStatusCodes,
-                                 StartTime = endTimeStatusCodes - TimeSpan.FromMinutes(11)
+                                 StartTime = endTimeStatusCodes - TimeSpan.FromMinutes(10)
                              });
 
                          var dataStepStats = connection3.QueryAsync<PointDataStepStats>(
@@ -184,7 +184,7 @@
                              {
                                  SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
                                  EndTime = endTimeStepStats,
-                                 StartTime = endTimeStepStats - TimeSpan.FromMinutes(11)
+                                 StartTime = endTimeStepStats - TimeSpan.FromMinutes(10)
                              });
 
                          await Task.WhenAll(dataLatencyCounts, dataStatusCodes, dataStepStats);
@@ -197,19 +197,19 @@
 
                          if (dataLatencyCounts.Result.Count() >= 120)
                          {
-                             endTimeLatencyCounts = dataLatencyCounts.Result.ToArray()[^1].Time + TimeSpan.FromSeconds(1);
+                             endTimeLatencyCounts = dataLatencyCounts.Result.ToArray()[^1].Time - TimeSpan.FromSeconds(1);
                              end = false;
                          }
 
                          if (dataStatusCodes.Result.Count() >= 120)
                          {
-                             endTimeStatusCodes = dataStatusCodes.Result.ToArray()[^1].Time  + TimeSpan.FromSeconds(1);
+                             endTimeStatusCodes = dataStatusCodes.Result.ToArray()[^1].Time - TimeSpan.FromSeconds(1);
                              end = false;
                          }
 
                          if (dataStepStats.Result.Count() >= 120)
                          {
-                             endTimeStepStats = dataStepStats.Result.ToArray()[^1].Time + TimeSpan.FromSeconds(1);
+                             endTimeStepStats = dataStepStats.Result.ToArray()[^1].Time - TimeSpan.FromSeconds(1);
                              end = false;
                          }
                      }

@@ -22,7 +22,7 @@ public static class SqlQueries
             {nameof(PointDataLatencyCounts.LatencyCountMore800Less1200)} INT,
             {nameof(PointDataLatencyCounts.LatencyCountMoreOrEq1200)} INT
         );
-    SELECT create_hypertable('latency_counts_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 hour'), if_not_exists => TRUE);
+    SELECT create_hypertable('latency_counts_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
     CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON latency_counts_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
 
     public static string InsertIntoPointDataLatencyCountsTable(PointDataLatencyCounts[] points) 
@@ -77,7 +77,7 @@ public static class SqlQueries
         AND time >= @StartTime
         AND time <= @EndTime
         ORDER BY Time DESC
-        LIMIT 121;
+        LIMIT 120;
         ";
     }
     
@@ -95,7 +95,7 @@ public static class SqlQueries
             {nameof(PointDataStart.ClusterNodeCount)} INT,
             {nameof(PointDataStart.ClusterNodeCpuCount)} INT
         );
-        SELECT create_hypertable('start_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 hour'), if_not_exists => TRUE);
+        SELECT create_hypertable('start_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
         CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON start_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
 
     public static string InsertIntoPointDataStartTable => $@"
@@ -142,7 +142,7 @@ public static class SqlQueries
             {nameof(PointDataStatusCodes.StatusCodeStatus)} TEXT,
             {nameof(PointDataStatusCodes.StatusCodeCount)} INT
         );
-        SELECT create_hypertable('status_codes_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 hour'), if_not_exists => TRUE);
+        SELECT create_hypertable('status_codes_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
         CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON status_codes_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
 
     public static string InsertIntoPointDataStatusCodesTable(PointDataStatusCodes[] points)
@@ -195,7 +195,7 @@ public static class SqlQueries
             AND time >= @StartTime
             AND time <= @EndTime
             ORDER BY Time DESC
-            LIMIT 121;
+            LIMIT 120;
         ";
     }
 
@@ -252,7 +252,7 @@ public static class SqlQueries
         {nameof(PointDataStepStats.FailDataTransferPercent99)} BIGINT,
         {nameof(PointDataStepStats.SimulationValue)} INT
     );
-    SELECT create_hypertable('step_stats_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 hour'), if_not_exists => TRUE);
+    SELECT create_hypertable('step_stats_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
     CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON step_stats_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
 
     public static string InsertIntoPointDataStepStatsTable(PointDataStepStats[] points)
@@ -381,7 +381,7 @@ public static class SqlQueries
                 AND time >= @StartTime
                 AND time <= @EndTime
                 ORDER BY Time DESC
-                LIMIT 121;
+                LIMIT 120;
             ";
     }
 }
