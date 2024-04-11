@@ -24,6 +24,10 @@
          PointDataStatusCodes fakePointDataStatusCodes = new();
          PointDataStepStats fakePointDataStepStats = new();
          
+         var startTime = DateTimeOffset.UtcNow;
+         
+         var globalId = "10"; 
+         
          /*var writeScenario = Scenario.Create("write_scenario", async context =>
              {
                   var step1 = await Step.Run("insert", context, async () =>
@@ -140,18 +144,21 @@
 
          var readScenario = Scenario.Create("read_scenario", async context =>
              {
-                 var endTimeLatencyCounts = DateTimeOffset.UtcNow;
-                 var endTimeStatusCodes = DateTimeOffset.UtcNow;
-                 var endTimeStepStats = DateTimeOffset.UtcNow;
-
                  var end = false;
 
                  var LatencyRes = new List<PointDataLatencyCounts>();
                  var StatusCodesRes = new List<PointDataStatusCodes>();
                  var StepStatsRes = new List<PointDataStepStats>();
 
+                 var counter = 0;
+                 var loopCount = 0;
+
                  var step1 = await Step.Run("read", context, async () =>
                  {
+                     var endTimeLatencyCounts = startTime;
+                     var endTimeStatusCodes = startTime;
+                     var endTimeStepStats = startTime;
+                     
                      while (!end)
                      {
                          await using var connection1 = new NpgsqlConnection(
@@ -166,7 +173,7 @@
                          var dataLatencyCounts = connection1.QueryAsync<PointDataLatencyCounts>(
                              SqlQueries.SelectFromPointDataLatencyCountsTable(), new
                              {
-                                 SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
+                                 SessionId = globalId,
                                  EndTime = endTimeLatencyCounts,
                                  StartTime = endTimeLatencyCounts - TimeSpan.FromMinutes(10)
                              });
@@ -174,7 +181,7 @@
                          var dataStatusCodes = connection2.QueryAsync<PointDataStatusCodes>(
                              SqlQueries.SelectFromPointDataStatusCodesTable(), new
                              {
-                                 SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
+                                 SessionId = globalId,
                                  EndTime = endTimeStatusCodes,
                                  StartTime = endTimeStatusCodes - TimeSpan.FromMinutes(10)
                              });
@@ -182,53 +189,76 @@
                          var dataStepStats = connection3.QueryAsync<PointDataStepStats>(
                              SqlQueries.SelectFromPointDataStepStatsTable(), new
                              {
-                                 SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
+                                 SessionId = globalId,
                                  EndTime = endTimeStepStats,
                                  StartTime = endTimeStepStats - TimeSpan.FromMinutes(10)
                              });
 
                          await Task.WhenAll(dataLatencyCounts, dataStatusCodes, dataStepStats);
 
+                         var dataLatencyCountsArr = dataLatencyCounts.Result.ToArray();
+                         var dataStatusCodesArr = dataStatusCodes.Result.ToArray();
+                         var dataStepStatsArr = dataStepStats.Result.ToArray();
+
                          end = true;
 
-                         LatencyRes.AddRange(dataLatencyCounts.Result);
-                         StepStatsRes.AddRange(dataStepStats.Result);
-                         StatusCodesRes.AddRange(dataStatusCodes.Result);
+                         LatencyRes.AddRange(dataLatencyCountsArr);
+                         StepStatsRes.AddRange(dataStepStatsArr);
+                         StatusCodesRes.AddRange(dataStatusCodesArr);
 
-                         if (dataLatencyCounts.Result.Count() >= 120)
+                         counter += dataLatencyCountsArr.Length + dataStepStatsArr.Length +
+                                    dataStatusCodesArr.Length;
+
+                         if (dataLatencyCountsArr.Length >= 120)
                          {
-                             endTimeLatencyCounts = dataLatencyCounts.Result.ToArray()[^1].Time - TimeSpan.FromSeconds(1);
+                             endTimeLatencyCounts = dataLatencyCountsArr[^1].Time - TimeSpan.FromSeconds(1);
+                             context.Logger.Information($"dataLatencyCountsArr.Length = {dataLatencyCountsArr.Length}");
+                             loopCount++;
                              end = false;
                          }
-
-                         if (dataStatusCodes.Result.Count() >= 120)
+                         else
                          {
-                             endTimeStatusCodes = dataStatusCodes.Result.ToArray()[^1].Time - TimeSpan.FromSeconds(1);
-                             end = false;
+                             context.Logger.Information($"ELSE: dataLatencyCountsArr.Length = {dataLatencyCountsArr.Length}");
                          }
 
-                         if (dataStepStats.Result.Count() >= 120)
+                         if (dataStatusCodesArr.Length >= 120)
                          {
-                             endTimeStepStats = dataStepStats.Result.ToArray()[^1].Time - TimeSpan.FromSeconds(1);
+                             endTimeStatusCodes = dataStatusCodesArr[^1].Time - TimeSpan.FromSeconds(1);
                              end = false;
+                         } 
+                         else
+                         {
+                             context.Logger.Information($"ELSE: dataStatusCodesArr.Length = {dataStatusCodesArr.Length}");
+                         }
+
+                         if (dataStepStatsArr.Length >= 120)
+                         {
+                             endTimeStepStats = dataStepStatsArr[^1].Time - TimeSpan.FromSeconds(1);
+                             end = false;
+                         }
+                         else
+                         {
+                             context.Logger.Information($"ELSE: dataStepStatsArr.Length = {dataStepStatsArr.Length}");
                          }
                      }
+                     
+                     context.Logger.Information($"loop counter = {loopCount}");
 
-                     return Response.Ok();
-                 });
-
-                 var step2 = await Step.Run("pause", context, async () =>
-                 {
-                     await Task.Delay(TimeSpan.FromSeconds(30));
-
-                     return Response.Ok();
+                     if (counter == 2160 * 3)
+                     {
+                         return Response.Ok();
+                     }
+                        
+                     context.Logger.Error($"count = {counter}");
+                     
+                     return Response.Fail();
                  });
 
                  return Response.Ok();
              })
              .WithLoadSimulations(
-                 Simulation.KeepConstant(1, TimeSpan.FromSeconds(30))
-             ).WithWarmUpDuration(TimeSpan.FromSeconds(3))
+                 Simulation.KeepConstant(1, TimeSpan.FromSeconds(15))
+             ).WithoutWarmUp()
              .WithInit(async context =>
              {
                  await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable
@@ -239,14 +269,12 @@
                  fakePointDataLatencyCounts = faker.Generate<PointDataLatencyCounts>();
                  fakePointDataStatusCodes = faker.Generate<PointDataStatusCodes>();
                  fakePointDataStepStats = faker.Generate<PointDataStepStats>();
-                 
-                 var startTime = DateTimeOffset.UtcNow;
 
                  var fakeLatencyCountsPoints = Enumerable
                      .Range(0, 2160).Select(i => new PointDataLatencyCounts
                      {
                          Time = startTime.AddSeconds(-5 * i),
-                         SessionId = "0",
+                         SessionId = globalId,
                          
                          Measurement = fakePointDataLatencyCounts.Measurement,
                          CurrentOperation = fakePointDataLatencyCounts.CurrentOperation,
@@ -264,7 +292,7 @@
                      .Range(0, 2160).Select(i => new PointDataStatusCodes
                      {
                          Time = startTime.AddSeconds(-5 * i),
-                         SessionId = "0",
+                         SessionId = globalId,
                          
                          Measurement = fakePointDataStatusCodes.Measurement,
                          CurrentOperation = fakePointDataStatusCodes.CurrentOperation,
@@ -281,7 +309,7 @@
                      .Range(0, 2160).Select(i => new PointDataStepStats()
                      { 
                          Time = startTime.AddSeconds(-5 * i),
-                         SessionId = "0",
+                         SessionId = globalId,
                          
                          Measurement = fakePointDataStepStats.Measurement,
                          CurrentOperation = fakePointDataStepStats.CurrentOperation,
