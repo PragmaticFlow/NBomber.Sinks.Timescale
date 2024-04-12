@@ -1,5 +1,6 @@
 ﻿ using AutoBogus;
  using Dapper;
+ using RepoDb;
  using NBomber.CSharp;
  using NBomber.Sinks.Timescale;
  using NBomber.Sinks.Timescale.Models;
@@ -26,122 +27,8 @@
          
          var startTime = DateTimeOffset.UtcNow;
          
-         var globalId = "10"; 
+         var globalId = "2"; 
          
-         /*var writeScenario = Scenario.Create("write_scenario", async context =>
-             {
-                  var step1 = await Step.Run("insert", context, async () =>
-                  {
-                      await using var connection1 = new NpgsqlConnection(
-                          "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
-                      
-                      await using var connection2 = new NpgsqlConnection(
-                          "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
-                      
-                      await using var connection3 = new NpgsqlConnection(
-                          "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
-                     
-                     fakePointDataStatusCodes.Time = DateTimeOffset.UtcNow;
-                     fakePointDataStatusCodes.SessionId = context.ScenarioInfo.ThreadNumber.ToString();
-                     var insert1 = connection1.ExecuteAsync(
-                         SqlQueries.InsertIntoPointDataStatusCodesTable(Enumerable.Repeat(fakePointDataStatusCodes, 360)
-                             .ToArray()));
-                     
-                     fakePointDataLatencyCounts.Time = DateTimeOffset.UtcNow;
-                     fakePointDataLatencyCounts.SessionId = context.ScenarioInfo.ThreadNumber.ToString();
-                     var insert2 = connection2.ExecuteAsync(
-                         SqlQueries.InsertIntoPointDataLatencyCountsTable(Enumerable
-                             .Repeat(fakePointDataLatencyCounts, 360).ToArray()));
-                     
-                     fakePointDataStepStats.Time = DateTimeOffset.UtcNow;
-                     fakePointDataStepStats.SessionId = context.ScenarioInfo.ThreadNumber.ToString();
-                     var insert3 = connection3.ExecuteAsync(
-                         SqlQueries.InsertIntoPointDataStepStatsTable(Enumerable.Repeat(fakePointDataStepStats, 360)
-                             .ToArray()));
-
-                     await Task.WhenAll(insert1, insert2, insert3);
-                     
-                     return Response.Ok();
-                 });
-
-                 var step2 = await Step.Run("pause", context, async () =>
-                 {
-                     await Task.Delay(TimeSpan.FromSeconds(5));
-
-                     return Response.Ok();
-                 });
-        
-                 return Response.Ok();
-             }).WithInit( async context =>
-             { 
-                 await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable
-                                                + SqlQueries.CreatePointDataLatencyCountsTable 
-                                                + SqlQueries.CreatePointDataStepStatsTable);
-                 var faker = AutoFaker.Create();
-                 
-                 fakePointDataLatencyCounts = faker.Generate<PointDataLatencyCounts>();
-                 fakePointDataStatusCodes = faker.Generate<PointDataStatusCodes>();
-                 fakePointDataStepStats = faker.Generate<PointDataStepStats>();
-             })
-             .WithLoadSimulations(
-                 Simulation.KeepConstant(100, TimeSpan.FromSeconds(4))
-             ).WithoutWarmUp();
-         
-         var readScenario = Scenario.Create("read_scenario", async context =>
-             {
-                  var step1 = await Step.Run("read", context, async () =>
-                 {
-                     await using var connection1 = new NpgsqlConnection(
-                         "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
-                      
-                     await using var connection2 = new NpgsqlConnection(
-                         "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
-                      
-                     await using var connection3 = new NpgsqlConnection(
-                         "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
-
-                     var dataLatencyCounts = connection1.QueryAsync<PointDataLatencyCounts>(
-                         SqlQueries.SelectFromPointDataLatencyCountsTable(), new
-                         {
-                             SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
-                             EndTime = DateTime.UtcNow,
-                             StartTime = DateTime.UtcNow.AddMinutes(-30),
-                         });
-                     
-                     var dataStatusCodes = connection2.QueryAsync<PointDataStatusCodes>(
-                         SqlQueries.SelectFromPointDataStatusCodesTable(), new
-                         {
-                             SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
-                             EndTime = DateTime.UtcNow,
-                             StartTime = DateTime.UtcNow.AddMinutes(-30),
-                         });
-                     
-                     var dataStepStats = connection3.QueryAsync<PointDataStepStats>(
-                         SqlQueries.SelectFromPointDataStepStatsTable(), new
-                         {
-                             SessionId = context.ScenarioInfo.ThreadNumber.ToString(),
-                             EndTime = DateTime.UtcNow,
-                             StartTime = DateTime.UtcNow.AddMinutes(-30),
-                         });
-
-                     await Task.WhenAll(dataLatencyCounts, dataStatusCodes, dataStepStats);
-                     
-                     return Response.Ok();
-                 });
-
-                 var step2 = await Step.Run("pause", context, async () =>
-                 {
-                     await Task.Delay(TimeSpan.FromSeconds(2));
-
-                     return Response.Ok();
-                 });
-        
-                 return Response.Ok();
-             })
-             .WithLoadSimulations(
-                 Simulation.KeepConstant(100, TimeSpan.FromSeconds(30))
-             ).WithWarmUpDuration(TimeSpan.FromSeconds(3));*/
-
          var readScenario = Scenario.Create("read_scenario", async context =>
              {
                  var end = false;
@@ -149,9 +36,6 @@
                  var LatencyRes = new List<PointDataLatencyCounts>();
                  var StatusCodesRes = new List<PointDataStatusCodes>();
                  var StepStatsRes = new List<PointDataStepStats>();
-
-                 var counter = 0;
-                 var loopCount = 0;
 
                  var step1 = await Step.Run("read", context, async () =>
                  {
@@ -170,29 +54,26 @@
                          await using var connection3 = new NpgsqlConnection(
                              "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
 
-                         var dataLatencyCounts = connection1.QueryAsync<PointDataLatencyCounts>(
-                             SqlQueries.SelectFromPointDataLatencyCountsTable(), new
-                             {
-                                 SessionId = globalId,
-                                 EndTime = endTimeLatencyCounts,
-                                 StartTime = endTimeLatencyCounts - TimeSpan.FromMinutes(10)
-                             });
+                         var st1 = endTimeLatencyCounts - TimeSpan.FromMinutes(10);
+                         
+                         var dataLatencyCounts = connection1.QueryAsync<PointDataLatencyCounts>("latency_counts_points",
+                             p => p.SessionId == globalId
+                                  && p.Time <= endTimeLatencyCounts
+                                  && p.Time >= st1);
 
-                         var dataStatusCodes = connection2.QueryAsync<PointDataStatusCodes>(
-                             SqlQueries.SelectFromPointDataStatusCodesTable(), new
-                             {
-                                 SessionId = globalId,
-                                 EndTime = endTimeStatusCodes,
-                                 StartTime = endTimeStatusCodes - TimeSpan.FromMinutes(10)
-                             });
+                         var st2 = endTimeStatusCodes - TimeSpan.FromSeconds(10);
+                         
+                         var dataStatusCodes = connection2.QueryAsync<PointDataStatusCodes>("status_codes_points", 
+                             p => p.SessionId == globalId
+                             && p. Time <= endTimeStatusCodes
+                             && p. Time >= st2);
 
-                         var dataStepStats = connection3.QueryAsync<PointDataStepStats>(
-                             SqlQueries.SelectFromPointDataStepStatsTable(), new
-                             {
-                                 SessionId = globalId,
-                                 EndTime = endTimeStepStats,
-                                 StartTime = endTimeStepStats - TimeSpan.FromMinutes(10)
-                             });
+                         var st3 = endTimeStepStats - TimeSpan.FromSeconds(10);
+                         
+                         var dataStepStats = connection3.QueryAsync<PointDataStepStats>("step_stats_points",
+                             p => p.SessionId == globalId 
+                             && p.Time <= endTimeStepStats
+                             && p.Time >= st3);
 
                          await Task.WhenAll(dataLatencyCounts, dataStatusCodes, dataStepStats);
 
@@ -206,19 +87,10 @@
                          StepStatsRes.AddRange(dataStepStatsArr);
                          StatusCodesRes.AddRange(dataStatusCodesArr);
 
-                         counter += dataLatencyCountsArr.Length + dataStepStatsArr.Length +
-                                    dataStatusCodesArr.Length;
-
                          if (dataLatencyCountsArr.Length >= 120)
                          {
                              endTimeLatencyCounts = dataLatencyCountsArr[^1].Time - TimeSpan.FromSeconds(1);
-                             context.Logger.Information($"dataLatencyCountsArr.Length = {dataLatencyCountsArr.Length}");
-                             loopCount++;
                              end = false;
-                         }
-                         else
-                         {
-                             context.Logger.Information($"ELSE: dataLatencyCountsArr.Length = {dataLatencyCountsArr.Length}");
                          }
 
                          if (dataStatusCodesArr.Length >= 120)
@@ -226,44 +98,28 @@
                              endTimeStatusCodes = dataStatusCodesArr[^1].Time - TimeSpan.FromSeconds(1);
                              end = false;
                          } 
-                         else
-                         {
-                             context.Logger.Information($"ELSE: dataStatusCodesArr.Length = {dataStatusCodesArr.Length}");
-                         }
 
                          if (dataStepStatsArr.Length >= 120)
                          {
                              endTimeStepStats = dataStepStatsArr[^1].Time - TimeSpan.FromSeconds(1);
                              end = false;
                          }
-                         else
-                         {
-                             context.Logger.Information($"ELSE: dataStepStatsArr.Length = {dataStepStatsArr.Length}");
-                         }
                      }
                      
-                     context.Logger.Information($"loop counter = {loopCount}");
-
-                     if (counter == 2160 * 3)
-                     {
-                         return Response.Ok();
-                     }
-                        
-                     context.Logger.Error($"count = {counter}");
-                     
-                     return Response.Fail();
+                     return Response.Ok();
                  });
 
                  return Response.Ok();
              })
              .WithLoadSimulations(
-                 Simulation.KeepConstant(1, TimeSpan.FromSeconds(15))
+                 Simulation.KeepConstant(1, TimeSpan.FromSeconds(30))
              ).WithoutWarmUp()
              .WithInit(async context =>
              {
-                 await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable
-                                                + SqlQueries.CreatePointDataLatencyCountsTable 
-                                                + SqlQueries.CreatePointDataStepStatsTable);
+                 GlobalConfiguration
+                     .Setup()
+                     .UsePostgreSql();
+                 
                  var faker = AutoFaker.Create();
                  
                  fakePointDataLatencyCounts = faker.Generate<PointDataLatencyCounts>();
@@ -368,15 +224,12 @@
                       
                  await using var connection3 = new NpgsqlConnection(
                      "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
+                 
+                 var insert1 = connection1.BinaryBulkInsertAsync("status_codes_points", fakeStatusCodesPoints);
+                 
+                 var insert2 = connection2.BinaryBulkInsertAsync("latency_counts_points", fakeLatencyCountsPoints);
 
-                 var insert1 =
-                     connection1.ExecuteAsync(SqlQueries.InsertIntoPointDataStatusCodesTable(fakeStatusCodesPoints));
-
-                 var insert2 =
-                     connection2.ExecuteAsync(SqlQueries.InsertIntoPointDataLatencyCountsTable(fakeLatencyCountsPoints));
-
-                 var insert3 =
-                     connection3.ExecuteAsync(SqlQueries.InsertIntoPointDataStepStatsTable(fakeStepStatsPoints));
+                 var insert3 = connection3.BinaryBulkInsertAsync("step_stats_points", fakeStepStatsPoints);
 
                  await Task.WhenAll(insert1, insert2, insert3);
              });
