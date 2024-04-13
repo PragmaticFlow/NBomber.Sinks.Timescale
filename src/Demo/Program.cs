@@ -29,7 +29,53 @@
          
          var globalId = "2"; 
          
-         var readScenario = Scenario.Create("read_scenario", async context =>
+          var writeScenario = Scenario.Create("write_scenario", async context =>
+             {
+                  var step1 = await Step.Run("insert", context, async () =>
+                  {
+                      await using var connection1 = new NpgsqlConnection(
+                          "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
+                      
+                      await using var connection2 = new NpgsqlConnection(
+                          "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
+                      
+                      await using var connection3 = new NpgsqlConnection(
+                          "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
+                      
+                     fakePointDataStatusCodes.Time = DateTimeOffset.UtcNow;
+                     fakePointDataStatusCodes.SessionId = context.ScenarioInfo.ThreadNumber.ToString();
+                     var insert1 = connection1.BinaryBulkInsertAsync("status_codes_points", Enumerable.Repeat(fakePointDataStatusCodes, 120));
+                     
+                     fakePointDataLatencyCounts.Time = DateTimeOffset.UtcNow;
+                     fakePointDataLatencyCounts.SessionId = context.ScenarioInfo.ThreadNumber.ToString();
+                     var insert2 = connection2.BinaryBulkInsertAsync("latency_counts_points", Enumerable.Repeat(fakePointDataLatencyCounts, 120));
+                     
+                     fakePointDataStepStats.Time = DateTimeOffset.UtcNow;
+                     fakePointDataStepStats.SessionId = context.ScenarioInfo.ThreadNumber.ToString();
+                     var insert3 = connection3.BinaryBulkInsertAsync("step_stats_points",Enumerable.Repeat(fakePointDataStepStats, 120));
+
+                     await Task.WhenAll(insert1, insert2, insert3);
+                     
+                     return Response.Ok();
+                 });
+        
+                 return Response.Ok();
+             }).WithInit( async context =>
+             { 
+                 await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable
+                                                + SqlQueries.CreatePointDataLatencyCountsTable 
+                                                + SqlQueries.CreatePointDataStepStatsTable);
+                 var faker = AutoFaker.Create();
+                 
+                 fakePointDataLatencyCounts = faker.Generate<PointDataLatencyCounts>();
+                 fakePointDataStatusCodes = faker.Generate<PointDataStatusCodes>();
+                 fakePointDataStepStats = faker.Generate<PointDataStepStats>();
+             })
+             .WithLoadSimulations(
+                 Simulation.KeepConstant(100, TimeSpan.FromSeconds(30))
+             ).WithoutWarmUp();
+         
+         /*var readScenario = Scenario.Create("read_scenario", async context =>
              {
                  var end = false;
 
@@ -232,10 +278,10 @@
                  var insert3 = connection3.BinaryBulkInsertAsync("step_stats_points", fakeStepStatsPoints);
 
                  await Task.WhenAll(insert1, insert2, insert3);
-             });
+             });*/
 
          NBomberRunner
-             .RegisterScenarios(readScenario)
+             .RegisterScenarios(writeScenario)
              //.LoadInfraConfig("infra-config.json")
              //.WithReportingInterval(TimeSpan.FromSeconds(5))
              //.WithReportingSinks(_timescaleDbSink)

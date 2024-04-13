@@ -7,7 +7,7 @@ namespace NBomber.Sinks.Timescale;
 public static class SqlQueries
 {
     public static string CreatePointDataLatencyCountsTable => $@"
-        CREATE TABLE IF NOT EXISTS latency_counts_points
+        CREATE TABLE IF NOT EXISTS ""latency_counts_points""
         (
             ""{nameof(PointDataBase.Measurement)}"" TEXT,
             ""{nameof(PointDataBase.Time)}"" TIMESTAMPTZ,
@@ -22,8 +22,11 @@ public static class SqlQueries
             ""{nameof(PointDataLatencyCounts.LatencyCountMore800Less1200)}"" INT,
             ""{nameof(PointDataLatencyCounts.LatencyCountMoreOrEq1200)}"" INT
         );
-    SELECT create_hypertable('latency_counts_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
-    CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON latency_counts_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
+    SELECT create_hypertable('latency_counts_points', by_range('{{nameof(PointDataBase.Time).ToLower()}}', INTERVAL '1 day'), if_not_exists => TRUE);
+    CREATE INDEX IF NOT EXISTS {{nameof(PointDataBase.SessionId)}}_index ON latency_counts_points ({{nameof(PointDataBase.SessionId)}}, {{nameof(PointDataBase.Time)}} DESC);
+   ";
+    
+   
 
     public static string InsertIntoPointDataLatencyCountsTable(PointDataLatencyCounts[] points) 
     {
@@ -95,8 +98,10 @@ public static class SqlQueries
             ""{nameof(PointDataStart.ClusterNodeCount)}"" INT,
             ""{nameof(PointDataStart.ClusterNodeCpuCount)}"" INT
         );
-        SELECT create_hypertable('start_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON start_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
+        SELECT create_hypertable('start_points', by_range('{{nameof(PointDataBase.Time).ToLower()}}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {{nameof(PointDataBase.SessionId)}}_index ON start_points ({{nameof(PointDataBase.SessionId)}}, {{nameof(PointDataBase.Time)}} DESC);
+       ";
+   
 
     public static string InsertIntoPointDataStartTable => $@"
     INSERT INTO start_points
@@ -127,7 +132,7 @@ public static class SqlQueries
     );";
     
     public static string CreatePointDataStatusCodesTable => $@"
-        CREATE TABLE IF NOT EXISTS status_codes_points
+        CREATE TABLE IF NOT EXISTS ""status_codes_points""
         (
             ""{nameof(PointDataBase.Measurement)}"" TEXT,
             ""{nameof(PointDataBase.Time)}"" TIMESTAMPTZ,
@@ -141,9 +146,9 @@ public static class SqlQueries
             ""{nameof(PointDataStatusCodes.StatusCodeStatus)}"" TEXT,
             ""{nameof(PointDataStatusCodes.StatusCodeCount)}"" INT
         );
-        SELECT create_hypertable('status_codes_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON status_codes_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
-
+      
+       ";
+    
     public static string InsertIntoPointDataStatusCodesTable(PointDataStatusCodes[] points)
     {
         var insertQuery = new StringBuilder();
@@ -199,7 +204,7 @@ public static class SqlQueries
     }
 
     public static string CreatePointDataStepStatsTable => $@"
-    CREATE TABLE IF NOT EXISTS step_stats_points
+    CREATE TABLE IF NOT EXISTS ""step_stats_points""
     (
         ""{nameof(PointDataBase.Measurement)}"" TEXT,
         ""{nameof(PointDataBase.Time)}"" TIMESTAMPTZ,
@@ -251,9 +256,10 @@ public static class SqlQueries
         ""{nameof(PointDataStepStats.FailDataTransferPercent99)}"" BIGINT,
         ""{nameof(PointDataStepStats.SimulationValue)}"" INT
     );
-    SELECT create_hypertable('step_stats_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
-    CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON step_stats_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);";
-
+    SELECT create_hypertable('step_stats_points', by_range('{{nameof(PointDataBase.Time).ToLower()}}', INTERVAL '1 day'), if_not_exists => TRUE);
+    CREATE INDEX IF NOT EXISTS {{nameof(PointDataBase.SessionId)}}_index ON step_stats_points ({{nameof(PointDataBase.SessionId)}}, {{nameof(PointDataBase.Time)}} DESC);
+   ";
+   
     public static string InsertIntoPointDataStepStatsTable(PointDataStepStats[] points)
     { 
         var insertQuery = new StringBuilder();
