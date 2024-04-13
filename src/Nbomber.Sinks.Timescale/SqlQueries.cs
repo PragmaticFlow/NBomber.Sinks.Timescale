@@ -25,7 +25,8 @@ public static class SqlQueries
     SELECT create_hypertable('latency_counts_points', by_range('{{nameof(PointDataBase.Time).ToLower()}}', INTERVAL '1 day'), if_not_exists => TRUE);
     CREATE INDEX IF NOT EXISTS {{nameof(PointDataBase.SessionId)}}_index ON latency_counts_points ({{nameof(PointDataBase.SessionId)}}, {{nameof(PointDataBase.Time)}} DESC);
    ";
-    
+
+
    
 
     public static string InsertIntoPointDataLatencyCountsTable(PointDataLatencyCounts[] points) 

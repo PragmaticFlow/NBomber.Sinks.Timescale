@@ -1,9 +1,12 @@
 ﻿ using AutoBogus;
  using Dapper;
+ using Microsoft.Extensions.Logging;
  using RepoDb;
  using NBomber.CSharp;
  using NBomber.Sinks.Timescale;
  using NBomber.Sinks.Timescale.Models;
+ using Serilog;
+ using Serilog.Extensions.Logging;
  using Npgsql;
 
  new TimescaleDBReportingExample().Run();
@@ -15,12 +18,25 @@
      
      public void Run()
      {
+         GlobalConfiguration
+             .Setup()
+             .UsePostgreSql();
+         
+         Log.Logger = new LoggerConfiguration()
+             .WriteTo.File("log.txt")
+             .CreateLogger();
+         
+         var loggerFactory = LoggerFactory.Create(builder => builder.AddSerilog());
+         NpgsqlLoggingConfiguration.InitializeLogging(loggerFactory);
+         
          using var _connection = new NpgsqlConnection(
                  "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;");
          var random = new Random();
          
          _connection.Open();
 
+        
+         
          PointDataLatencyCounts fakePointDataLatencyCounts = new();
          PointDataStatusCodes fakePointDataStatusCodes = new();
          PointDataStepStats fakePointDataStepStats = new();
@@ -62,9 +78,9 @@
                  return Response.Ok();
              }).WithInit( async context =>
              { 
-                 await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable
+                 /*await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable
                                                 + SqlQueries.CreatePointDataLatencyCountsTable 
-                                                + SqlQueries.CreatePointDataStepStatsTable);
+                                                + SqlQueries.CreatePointDataStepStatsTable);*/
                  var faker = AutoFaker.Create();
                  
                  fakePointDataLatencyCounts = faker.Generate<PointDataLatencyCounts>();
@@ -72,7 +88,7 @@
                  fakePointDataStepStats = faker.Generate<PointDataStepStats>();
              })
              .WithLoadSimulations(
-                 Simulation.KeepConstant(100, TimeSpan.FromSeconds(30))
+                 Simulation.KeepConstant(30, TimeSpan.FromSeconds(30))
              ).WithoutWarmUp();
          
          /*var readScenario = Scenario.Create("read_scenario", async context =>
