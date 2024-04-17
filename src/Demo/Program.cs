@@ -18,10 +18,6 @@
      
      public void Run()
      {
-         GlobalConfiguration
-             .Setup()
-             .UsePostgreSql();
-         
          Log.Logger = new LoggerConfiguration()
              .WriteTo.File("log.txt")
              .CreateLogger();
@@ -34,8 +30,6 @@
          var random = new Random();
          
          _connection.Open();
-
-        
          
          PointDataLatencyCounts fakePointDataLatencyCounts = new();
          PointDataStatusCodes fakePointDataStatusCodes = new();
@@ -43,9 +37,9 @@
          
          var startTime = DateTimeOffset.UtcNow;
          
-         var globalId = "2"; 
+         var globalId = "0"; 
          
-          var writeScenario = Scenario.Create("write_scenario", async context =>
+          /*var writeScenario = Scenario.Create("write_scenario", async context =>
              {
                   var step1 = await Step.Run("insert", context, async () =>
                   {
@@ -80,7 +74,7 @@
              { 
                  /*await _connection.ExecuteAsync(SqlQueries.CreatePointDataStatusCodesTable
                                                 + SqlQueries.CreatePointDataLatencyCountsTable 
-                                                + SqlQueries.CreatePointDataStepStatsTable);*/
+                                                + SqlQueries.CreatePointDataStepStatsTable);#1#
                  var faker = AutoFaker.Create();
                  
                  fakePointDataLatencyCounts = faker.Generate<PointDataLatencyCounts>();
@@ -89,9 +83,9 @@
              })
              .WithLoadSimulations(
                  Simulation.KeepConstant(30, TimeSpan.FromSeconds(30))
-             ).WithoutWarmUp();
+             ).WithoutWarmUp();*/
          
-         /*var readScenario = Scenario.Create("read_scenario", async context =>
+         var readScenario = Scenario.Create("read_scenario", async context =>
              {
                  var end = false;
 
@@ -294,10 +288,10 @@
                  var insert3 = connection3.BinaryBulkInsertAsync("step_stats_points", fakeStepStatsPoints);
 
                  await Task.WhenAll(insert1, insert2, insert3);
-             });*/
+             });
 
          NBomberRunner
-             .RegisterScenarios(writeScenario)
+             .RegisterScenarios(readScenario)
              //.LoadInfraConfig("infra-config.json")
              //.WithReportingInterval(TimeSpan.FromSeconds(5))
              //.WithReportingSinks(_timescaleDbSink)
