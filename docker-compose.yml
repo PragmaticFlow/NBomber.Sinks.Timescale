@@ -15,20 +15,3 @@ services:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
-  timescalebenchmark:
-    image: timescalebenchmark
-    build:
-      context: .
-      dockerfile: TimescaleBenchmark/Dockerfile
-
-  timescalebenchmark-1:
-    image: timescalebenchmark-1
-    build:
-      context: .
-      dockerfile: TimescaleBenchmark/Dockerfile
-
-  timescalebenchmark-2:
-    image: timescalebenchmark-2
-    build:
-      context: .
-      dockerfile: TimescaleBenchmark/Dockerfile
