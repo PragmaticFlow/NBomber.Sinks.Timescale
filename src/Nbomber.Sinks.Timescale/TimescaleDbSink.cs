@@ -4,6 +4,7 @@ using NBomber.Contracts;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Models;
 using Npgsql;
+using RepoDb;
 using ILogger = Serilog.ILogger;
 
 namespace NBomber.Sinks.Timescale;
@@ -54,6 +55,10 @@ public class TimescaleDbSink : IReportingSink
                 $"Reporting Sink {SinkName} has problems with initialization. The problem could be related to invalid config structure.");
         }
         
+        GlobalConfiguration
+            .Setup()
+            .UsePostgreSql();
+        
         _connection.Open();
         
         await _connection.ExecuteAsync(SqlQueries.CreatePointDataStartTable 
@@ -76,7 +81,7 @@ public class TimescaleDbSink : IReportingSink
             
             AddTestInfoTags(point);
            
-            await _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataStartTable, point);
+            await _connection.InsertAsync("start_points", point);
         }
     }
 
@@ -113,13 +118,13 @@ public class TimescaleDbSink : IReportingSink
             var updatedStats = stats.Select(AddGlobalInfoStep).ToArray();
 
             var realtimeStats = updatedStats.SelectMany(MapStepsStats).ToArray();
-            await _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataStepStatsTable(realtimeStats));
+            await _connection.BinaryBulkInsertAsync("step_stats_points", realtimeStats);
 
             var latencyCounts = stats.Select(MapLatencyCount).ToArray();
-            await _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataLatencyCountsTable(latencyCounts));
+            await _connection.BinaryBulkInsertAsync("latency_counts_points", latencyCounts);
 
             var statusCodes = stats.SelectMany(MapStatusCodes).ToArray();
-            await _connection.ExecuteAsync(SqlQueries.InsertIntoPointDataStatusCodesTable(statusCodes));
+            await _connection.BinaryBulkInsertAsync("status_codes_points", statusCodes);
         }
     }
 
