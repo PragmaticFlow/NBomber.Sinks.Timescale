@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "src\Demo\Demo.csproj", "{91AF9F8B-DE4D-42AA-ADB6-7CDC73BBB171}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimescaleBenchmark", "TimescaleBenchmark\TimescaleBenchmark.csproj", "{5BC9A416-09AC-4273-9A1F-D83DE42F199F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,5 +25,9 @@ Global
 		{91AF9F8B-DE4D-42AA-ADB6-7CDC73BBB171}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91AF9F8B-DE4D-42AA-ADB6-7CDC73BBB171}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91AF9F8B-DE4D-42AA-ADB6-7CDC73BBB171}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BC9A416-09AC-4273-9A1F-D83DE42F199F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BC9A416-09AC-4273-9A1F-D83DE42F199F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BC9A416-09AC-4273-9A1F-D83DE42F199F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BC9A416-09AC-4273-9A1F-D83DE42F199F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

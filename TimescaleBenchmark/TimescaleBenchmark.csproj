@@ -5,22 +5,18 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="NBomber" Version="5.6.0-beta.2" />
+      <PackageReference Include="AutoBogus" Version="2.13.1" />
+      <PackageReference Include="NBomber" Version="5.6.0" />
       <PackageReference Include="RepoDb.PostgreSql" Version="1.13.2-alpha1" />
       <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.13.2-alpha1" />
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="infra-config.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+      <ProjectReference Include="..\src\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj" />
     </ItemGroup>
 
 </Project>
