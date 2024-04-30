@@ -1,118 +1,139 @@
-using NBomber.Sinks.Timescale.Models;
+using NBomber.Sinks.Timescale.Contracts;
 
 namespace NBomber.Sinks.Timescale;
 
 public static class SqlQueries
 {
-    public static string CreatePointDataLatencyCountsTable => $@"
-        CREATE TABLE IF NOT EXISTS ""latency_counts_points""
-        (
-            ""{nameof(PointDataBase.Measurement)}"" TEXT,
-            {nameof(PointDataBase.Time)} TIMESTAMPTZ,
-            {nameof(PointDataBase.SessionId)} TEXT,
-            ""{nameof(PointDataBase.CurrentOperation)}"" TEXT,
-            ""{nameof(PointDataBase.NodeType)}"" TEXT,
-            ""{nameof(PointDataBase.TestSuite)}"" TEXT,
-            ""{nameof(PointDataBase.TestName)}"" TEXT,
-            ""{nameof(PointDataBase.ClusterId)}"" TEXT,
-            ""{nameof(PointDataLatencyCounts.Scenario)}"" TEXT,
-            ""{nameof(PointDataLatencyCounts.LatencyCountLessOrEq800)}"" INT,
-            ""{nameof(PointDataLatencyCounts.LatencyCountMore800Less1200)}"" INT,
-            ""{nameof(PointDataLatencyCounts.LatencyCountMoreOrEq1200)}"" INT
+    public const string StepStatsOkTableName = "step_stats_ok";
+    public const string StepStatsFailTableName = "step_stats_fail";
+    public const string StatusCodesTableName = "status_codes";
+    public const string LatencyCountsTableName = "latency_counts";
+    public const string ClusterStatsTableName = "cluster_stats";
+    
+    public static string CreateLatencyCountsTable => $@"
+        CREATE TABLE IF NOT EXISTS ""{LatencyCountsTableName}""
+        (            
+            ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
+            ""{ColumnNames.SessionId}"" TEXT NOT NULL,
+            ""{ColumnNames.CurrentOperation}"" TEXT,
+            ""{ColumnNames.NodeType}"" TEXT,
+            ""{ColumnNames.TestSuite}"" TEXT,
+            ""{ColumnNames.TestName}"" TEXT,
+            ""{ColumnNames.ClusterId}"" TEXT,
+            ""{ColumnNames.Scenario}"" TEXT,
+            ""{ColumnNames.LessOrEq800}"" INT,
+            ""{ColumnNames.More800Less1200}"" INT,
+            ""{ColumnNames.MoreOrEq1200}"" INT
         );
-    SELECT create_hypertable('latency_counts_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
-    CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON latency_counts_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);
+        SELECT create_hypertable('{LatencyCountsTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {LatencyCountsTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
    ";
     
-    public static string CreatePointDataStartTable => $@"
-        CREATE TABLE IF NOT EXISTS ""start_points""
-        (
-            ""{nameof(PointDataBase.Measurement)}"" TEXT,
-            {nameof(PointDataBase.Time)} TIMESTAMPTZ,
-            {nameof(PointDataBase.SessionId)} TEXT,
-            ""{nameof(PointDataBase.CurrentOperation)}"" TEXT,
-            ""{nameof(PointDataBase.NodeType)}"" TEXT,
-            ""{nameof(PointDataBase.TestSuite)}"" TEXT,
-            ""{nameof(PointDataBase.TestName)}"" TEXT,
-            ""{nameof(PointDataBase.ClusterId)}"" TEXT,
-            ""{nameof(PointDataStart.ClusterNodeCount)}"" INT,
-            ""{nameof(PointDataStart.ClusterNodeCpuCount)}"" INT
+    public static string CreateClusterStatsTable => $@"
+        CREATE TABLE IF NOT EXISTS ""{ClusterStatsTableName}""
+        (            
+            ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
+            ""{ColumnNames.SessionId}"" TEXT NOT NULL,
+            ""{ColumnNames.CurrentOperation}"" TEXT,
+            ""{ColumnNames.NodeType}"" TEXT,
+            ""{ColumnNames.TestSuite}"" TEXT,
+            ""{ColumnNames.TestName}"" TEXT,
+            ""{ColumnNames.ClusterId}"" TEXT,
+            ""{ColumnNames.NodeCount}"" INT,
+            ""{ColumnNames.NodeCpuCount}"" INT
         );
-        SELECT create_hypertable('start_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON start_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);
+        SELECT create_hypertable('{ClusterStatsTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {ClusterStatsTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
        ";
     
-    public static string CreatePointDataStatusCodesTable => $@"
-        CREATE TABLE IF NOT EXISTS ""status_codes_points""
+    public static string CreateStatusCodesTable => $@"
+        CREATE TABLE IF NOT EXISTS ""{StatusCodesTableName}""
         (
-            ""{nameof(PointDataBase.Measurement)}"" TEXT,
-            {nameof(PointDataBase.Time)} TIMESTAMPTZ,
-            {nameof(PointDataBase.SessionId)} TEXT,
-            ""{nameof(PointDataBase.CurrentOperation)}"" TEXT,
-            ""{nameof(PointDataBase.NodeType)}"" TEXT,
-            ""{nameof(PointDataBase.TestSuite)}"" TEXT,
-            ""{nameof(PointDataBase.TestName)}"" TEXT,
-            ""{nameof(PointDataBase.ClusterId)}"" TEXT,
-            ""{nameof(PointDataStatusCodes.Scenario)}"" TEXT,
-            ""{nameof(PointDataStatusCodes.StatusCodeStatus)}"" TEXT,
-            ""{nameof(PointDataStatusCodes.StatusCodeCount)}"" INT
+            ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
+            ""{ColumnNames.SessionId}"" TEXT NOT NULL,
+            ""{ColumnNames.CurrentOperation}"" TEXT,
+            ""{ColumnNames.NodeType}"" TEXT,
+            ""{ColumnNames.TestSuite}"" TEXT,
+            ""{ColumnNames.TestName}"" TEXT,
+            ""{ColumnNames.ClusterId}"" TEXT,
+            ""{ColumnNames.Scenario}"" TEXT,
+            ""{ColumnNames.StatusCode}"" TEXT,
+            ""{ColumnNames.Count}"" INT
         );
+        SELECT create_hypertable('{StatusCodesTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StatusCodesTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
        ";
 
-    public static string CreatePointDataStepStatsTable => $@"
-    CREATE TABLE IF NOT EXISTS ""step_stats_points""
-    (
-        ""{nameof(PointDataBase.Measurement)}"" TEXT,
-        {nameof(PointDataBase.Time)} TIMESTAMPTZ,
-        {nameof(PointDataBase.SessionId)} TEXT,
-        ""{nameof(PointDataBase.CurrentOperation)}"" TEXT,
-        ""{nameof(PointDataBase.NodeType)}"" TEXT,
-        ""{nameof(PointDataBase.TestSuite)}"" TEXT,
-        ""{nameof(PointDataBase.TestName)}"" TEXT,
-        ""{nameof(PointDataBase.ClusterId)}"" TEXT,
-        ""{nameof(PointDataStepStats.Step)}"" TEXT,
-        ""{nameof(PointDataStepStats.Scenario)}"" TEXT,
-        ""{nameof(PointDataStepStats.AllRequestCount)}"" INT,
-        ""{nameof(PointDataStepStats.AllDataTransferAll)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkRequestCount)}"" INT,
-        ""{nameof(PointDataStepStats.OkRequestRps)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyMax)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyMean)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyMin)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyStdDev)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyPercent50)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyPercent75)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyPercent95)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkLatencyPercent99)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.OkDataTransferMin)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkDataTransferMean)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkDataTransferMax)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkDataTransferAll)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkDataTransferPercent50)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkDataTransferPercent75)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkDataTransferPercent95)}"" BIGINT,
-        ""{nameof(PointDataStepStats.OkDataTransferPercent99)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailRequestCount)}"" INT,
-        ""{nameof(PointDataStepStats.FailRequestRps)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyMax)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyMean)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyMin)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyStdDev)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyPercent50)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyPercent75)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyPercent95)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailLatencyPercent99)}"" DOUBLE PRECISION,
-        ""{nameof(PointDataStepStats.FailDataTransferMin)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailDataTransferMean)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailDataTransferMax)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailDataTransferAll)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailDataTransferPercent50)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailDataTransferPercent75)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailDataTransferPercent95)}"" BIGINT,
-        ""{nameof(PointDataStepStats.FailDataTransferPercent99)}"" BIGINT,
-        ""{nameof(PointDataStepStats.SimulationValue)}"" INT
-    );
-    SELECT create_hypertable('step_stats_points', by_range('{nameof(PointDataBase.Time).ToLower()}', INTERVAL '1 day'), if_not_exists => TRUE);
-    CREATE INDEX IF NOT EXISTS {nameof(PointDataBase.SessionId)}_index ON step_stats_points ({nameof(PointDataBase.SessionId)}, {nameof(PointDataBase.Time)} DESC);
+    public static string CreateStepStatsOkTable => $@"
+        CREATE TABLE IF NOT EXISTS ""{StepStatsOkTableName}""
+        (
+            ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
+            ""{ColumnNames.SessionId}"" TEXT NOT NULL,
+            ""{ColumnNames.CurrentOperation}"" TEXT,
+            ""{ColumnNames.NodeType}"" TEXT,
+            ""{ColumnNames.TestSuite}"" TEXT,
+            ""{ColumnNames.TestName}"" TEXT,
+            ""{ColumnNames.ClusterId}"" TEXT,
+            ""{ColumnNames.Step}"" TEXT,
+            ""{ColumnNames.Scenario}"" TEXT,
+            ""{ColumnNames.AllReqCount}"" INT,
+            ""{ColumnNames.AllDataAll}"" BIGINT,
+            ""{ColumnNames.OkReqCount}"" INT,
+            ""{ColumnNames.OkReqRps}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyMax}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyMean}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyMin}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyStdDev}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyP50}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyP75}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyP95}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkLatencyP99}"" DOUBLE PRECISION,
+            ""{ColumnNames.OkDataMin}"" BIGINT,
+            ""{ColumnNames.OkDataMean}"" BIGINT,
+            ""{ColumnNames.OkDataMax}"" BIGINT,
+            ""{ColumnNames.OkDataAll}"" BIGINT,
+            ""{ColumnNames.OkDataP50}"" BIGINT,
+            ""{ColumnNames.OkDataP75}"" BIGINT,
+            ""{ColumnNames.OkDataP95}"" BIGINT,
+            ""{ColumnNames.OkDataP99}"" BIGINT,
+            ""{ColumnNames.FailReqCount}"" INT,
+            ""{ColumnNames.FailReqRps}"" DOUBLE PRECISION,            
+            ""{ColumnNames.SimulationValue}"" INT
+        );
+        SELECT create_hypertable('{StepStatsOkTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsOkTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
+   ";
+    
+    public static string CreateStepStatsFailTable => $@"
+        CREATE TABLE IF NOT EXISTS ""{StepStatsFailTableName}""
+        (
+            ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
+            ""{ColumnNames.SessionId}"" TEXT NOT NULL,
+            ""{ColumnNames.CurrentOperation}"" TEXT,
+            ""{ColumnNames.NodeType}"" TEXT,
+            ""{ColumnNames.TestSuite}"" TEXT,
+            ""{ColumnNames.TestName}"" TEXT,
+            ""{ColumnNames.ClusterId}"" TEXT,
+            ""{ColumnNames.Step}"" TEXT,
+            ""{ColumnNames.Scenario}"" TEXT,            
+            ""{ColumnNames.FailLatencyMax}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailLatencyMean}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailLatencyMin}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailLatencyStdDev}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailLatencyP50}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailLatencyP75}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailLatencyP95}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailLatencyP99}"" DOUBLE PRECISION,
+            ""{ColumnNames.FailDataMin}"" BIGINT,
+            ""{ColumnNames.FailDataMean}"" BIGINT,
+            ""{ColumnNames.FailDataMax}"" BIGINT,
+            ""{ColumnNames.FailDataAll}"" BIGINT,
+            ""{ColumnNames.FailDataP50}"" BIGINT,
+            ""{ColumnNames.FailDataP75}"" BIGINT,
+            ""{ColumnNames.FailDataP95}"" BIGINT,
+            ""{ColumnNames.FailDataP99}"" BIGINT            
+        );
+        SELECT create_hypertable('{StepStatsFailTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsFailTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
    ";
 }   

@@ -1,5 +1,0 @@
-{
-  "TimescaleDbSink":{
-    "ConnectionString": "Host=localhost;Port=5432;Database=timescaledb;Username=andrii;Password=myPass;Pooling=true;"
-  }
-}
