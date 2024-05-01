@@ -1,3 +1,5 @@
+#pragma warning disable CS1591
+
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NBomber.Sinks.Timescale.Contracts;

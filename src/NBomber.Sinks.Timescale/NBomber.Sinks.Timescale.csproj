@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <Version>0.1.0-beta.0</Version>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>12.0</LangVersion>        
+        <Authors>Andrii Marchenko, Anton Moldovan</Authors>
+        <Copyright>NBomber@2024</Copyright>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageIcon>nbomber_icon.png</PackageIcon>
+        <RepositoryUrl>https://github.com/PragmaticFlow/NBomber.Sinks.Timescale</RepositoryUrl>
+        <PackageTags>load-testing, performance-testing, integration-testing, fsharp, timescale</PackageTags>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Description>NBomber sink that writes stats data to TimescaleDB</Description>
+        <Title>NBomber.Sinks.Timescale</Title>
+        <RootNamespace>NBomber.Sinks.Timescale</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="NBomber.Contracts" Version="5.0.0" />
+      <PackageReference Include="Npgsql" Version="8.0.2" />
+      <PackageReference Include="RepoDb.PostgreSql" Version="1.13.2-alpha1" />
+      <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.13.2-alpha1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="" />
+        <None Include="../../assets/nbomber_icon.png" Pack="true" Visible="false" PackagePath="" />
+    </ItemGroup>    
+
+</Project>

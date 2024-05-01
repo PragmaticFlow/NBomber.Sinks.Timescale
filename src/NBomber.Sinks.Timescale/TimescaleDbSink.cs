@@ -1,3 +1,5 @@
+#pragma warning disable CS1591
+
 using Microsoft.Extensions.Configuration;
 using NBomber.Contracts;
 using NBomber.Contracts.Stats;

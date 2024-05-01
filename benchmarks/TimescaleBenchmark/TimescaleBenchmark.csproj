@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj"/>
+      <ProjectReference Include="..\..\src\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj" />
     </ItemGroup>
 
 </Project>

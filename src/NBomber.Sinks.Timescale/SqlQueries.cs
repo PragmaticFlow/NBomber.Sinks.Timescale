@@ -1,3 +1,5 @@
+#pragma warning disable CS1591
+
 using NBomber.Sinks.Timescale.Contracts;
 
 namespace NBomber.Sinks.Timescale;
