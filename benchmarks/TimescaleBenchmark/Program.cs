@@ -23,7 +23,7 @@ public class TimescaleDBReportingExample
             .Setup()
             .UsePostgreSql();
 
-        var connectionString = "Host=localhost;Port=5432;Database=timescaledb;Username=postgres;Password=postgres;Pooling=true;Maximum Pool Size=300;";
+        var connectionString = "Host=localhost;Port=5432;Database=timescaledb;Username=timescaledb;Password=timescaledb;Pooling=true;Maximum Pool Size=300;";
         
         using var connection = new NpgsqlConnection(connectionString);
 

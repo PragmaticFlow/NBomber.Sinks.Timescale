@@ -37,16 +37,16 @@ public class ReadScenario
                          && p.Time <= endTimeLatencyCounts
                          && p.Time >= st1);
 
-                var st2 = endTimeStatusCodes - TimeSpan.FromSeconds(10);
+                var st2 = endTimeStatusCodes - TimeSpan.FromMinutes(10);
                 
                 var dataStatusCodes = connection2.QueryAsync<PointStatusCodes>(SqlQueries.StatusCodesTableName, 
                     p => p.SessionId == sessionId
                     && p. Time <= endTimeStatusCodes
                     && p. Time >= st2);
 
-                var st3 = endTimeStepStats - TimeSpan.FromSeconds(10);
+                var st3 = endTimeStepStats - TimeSpan.FromMinutes(10);
                 
-                var dataStepStats = connection3.QueryAsync<PointStepStatsOk>(SqlQueries.CreateStepStatsOkTable,
+                var dataStepStats = connection3.QueryAsync<PointStepStatsOk>(SqlQueries.StepStatsOkTableName,
                     p => p.SessionId == sessionId 
                     && p.Time <= endTimeStepStats
                     && p.Time >= st3);
@@ -168,22 +168,7 @@ public class ReadScenario
                     OkDataP99 = fakePointStepStats.OkDataP99,
                     FailReqCount = fakePointStepStats.FailReqCount,
                     FailReqRps = fakePointStepStats.FailReqRps,
-                    // FailLatencyMax = fakePointStepStats.FailLatencyMax,
-                    // FailLatencyMean = fakePointStepStats.FailLatencyMean,
-                    // FailLatencyMin = fakePointStepStats.FailLatencyMin,
-                    // FailLatencyStdDev = fakePointStepStats.FailLatencyStdDev,
-                    // FailLatencyP50 = fakePointStepStats.FailLatencyP50,
-                    // FailLatencyP75 = fakePointStepStats.FailLatencyP75,
-                    // FailLatencyP95 = fakePointStepStats.FailLatencyP95,
-                    // FailLatencyP99 = fakePointStepStats.FailLatencyP99,
-                    // FailDataMin = fakePointStepStats.FailDataMin,
-                    // FailDataMean = fakePointStepStats.FailDataMean,
-                    // FailDataMax = fakePointStepStats.FailDataMax,
-                    // FailDataAll = fakePointStepStats.FailDataAll,
-                    // FailDataP50 = fakePointStepStats.FailDataP50,
-                    // FailDataP75 = fakePointStepStats.FailDataP75,
-                    // FailDataP95 = fakePointStepStats.FailDataP95,
-                    // FailDataP99 = fakePointStepStats.FailDataP99,
+                    
                     SimulationValue = fakePointStepStats.SimulationValue
                 })
                 .ToArray();
@@ -194,7 +179,7 @@ public class ReadScenario
             
             var insert1 = connection1.BinaryBulkInsertAsync(SqlQueries.StatusCodesTableName, fakeStatusCodesPoints);
             var insert2 = connection2.BinaryBulkInsertAsync(SqlQueries.LatencyCountsTableName, fakeLatencyCountsPoints);
-            var insert3 = connection3.BinaryBulkInsertAsync(SqlQueries.CreateStepStatsOkTable, fakeStepStatsPoints);
+            var insert3 = connection3.BinaryBulkInsertAsync(SqlQueries.StepStatsOkTableName, fakeStepStatsPoints);
 
             await Task.WhenAll(insert1, insert2, insert3);
         });
