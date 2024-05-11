@@ -1,12 +1,12 @@
 #pragma warning disable CS1591
 
 using Microsoft.Extensions.Configuration;
-using NBomber.Contracts;
-using NBomber.Contracts.Stats;
-using NBomber.Sinks.Timescale.Contracts;
 using Npgsql;
 using RepoDb;
 using ILogger = Serilog.ILogger;
+using NBomber.Contracts;
+using NBomber.Contracts.Stats;
+using NBomber.Sinks.Timescale.Contracts;
 
 namespace NBomber.Sinks.Timescale;
 

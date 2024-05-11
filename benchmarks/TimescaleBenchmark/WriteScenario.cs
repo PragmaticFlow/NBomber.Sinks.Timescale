@@ -1,11 +1,11 @@
 ﻿using AutoBogus;
 using Dapper;
+using Npgsql;
+using RepoDb;
 using NBomber.Contracts;
 using NBomber.CSharp;
 using NBomber.Sinks.Timescale;
 using NBomber.Sinks.Timescale.Contracts;
-using Npgsql;
-using RepoDb;
 
 namespace TimescaleBenchmark;
 
@@ -21,9 +21,9 @@ public class WriteScenario
         {
             var step = await Step.Run("write", ctx, async () =>
             {
-                using var connection1 = new NpgsqlConnection(connectionString);
-                using var connection2 = new NpgsqlConnection(connectionString);
-                using var connection3 = new NpgsqlConnection(connectionString);
+                await using var connection1 = new NpgsqlConnection(connectionString);
+                await using var connection2 = new NpgsqlConnection(connectionString);
+                await using var connection3 = new NpgsqlConnection(connectionString);
             
                 var curTime = DateTimeOffset.UtcNow;
              
@@ -53,7 +53,7 @@ public class WriteScenario
         })
         .WithInit(async ctx =>
         {
-            using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = new NpgsqlConnection(connectionString);
             
             await connection.ExecuteAsync(SqlQueries.CreateStatusCodesTable
                                           + SqlQueries.CreateLatencyCountsTable 

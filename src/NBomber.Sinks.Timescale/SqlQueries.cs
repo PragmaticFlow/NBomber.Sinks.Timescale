@@ -28,7 +28,7 @@ public static class SqlQueries
             ""{ColumnNames.MoreOrEq1200}"" INT
         );
         SELECT create_hypertable('{LatencyCountsTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {LatencyCountsTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {LatencyCountsTableName} ({ColumnNames.SessionId});
    ";
     
     public static string CreateClusterStatsTable => $@"
@@ -45,7 +45,7 @@ public static class SqlQueries
             ""{ColumnNames.NodeCpuCount}"" INT
         );
         SELECT create_hypertable('{ClusterStatsTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {ClusterStatsTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {ClusterStatsTableName} ({ColumnNames.SessionId});
        ";
     
     public static string CreateStatusCodesTable => $@"
@@ -63,7 +63,7 @@ public static class SqlQueries
             ""{ColumnNames.Count}"" INT
         );
         SELECT create_hypertable('{StatusCodesTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StatusCodesTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StatusCodesTableName} ({ColumnNames.SessionId});
        ";
 
     public static string CreateStepStatsOkTable => $@"
@@ -103,7 +103,7 @@ public static class SqlQueries
             ""{ColumnNames.SimulationValue}"" INT
         );
         SELECT create_hypertable('{StepStatsOkTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsOkTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsOkTableName} ({ColumnNames.SessionId});
    ";
     
     public static string CreateStepStatsFailTable => $@"
@@ -136,6 +136,6 @@ public static class SqlQueries
             ""{ColumnNames.FailDataP99}"" BIGINT            
         );
         SELECT create_hypertable('{StepStatsFailTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsFailTableName} ({ColumnNames.SessionId}, {ColumnNames.Time} DESC);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsFailTableName} ({ColumnNames.SessionId});
    ";
 }   
