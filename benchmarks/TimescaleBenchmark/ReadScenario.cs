@@ -1,10 +1,10 @@
 ﻿using AutoBogus;
+using Npgsql;
+using RepoDb;
 using NBomber.Contracts;
 using NBomber.CSharp;
 using NBomber.Sinks.Timescale;
 using NBomber.Sinks.Timescale.Contracts;
-using Npgsql;
-using RepoDb;
 
 namespace TimescaleBenchmark;
 
@@ -26,9 +26,9 @@ public class ReadScenario
             
             while (!end)
             {
-                using var connection1 = new NpgsqlConnection(connectionString);
-                using var connection2 = new NpgsqlConnection(connectionString);
-                using var connection3 = new NpgsqlConnection(connectionString);
+                await using var connection1 = new NpgsqlConnection(connectionString);
+                await using var connection2 = new NpgsqlConnection(connectionString);
+                await using var connection3 = new NpgsqlConnection(connectionString);
 
                 var st1 = endTimeLatencyCounts - TimeSpan.FromMinutes(10);
                 
@@ -173,9 +173,9 @@ public class ReadScenario
                 })
                 .ToArray();
             
-            using var connection1 = new NpgsqlConnection(connectionString);
-            using var connection2 = new NpgsqlConnection(connectionString);
-            using var connection3 = new NpgsqlConnection(connectionString);
+            await using var connection1 = new NpgsqlConnection(connectionString);
+            await using var connection2 = new NpgsqlConnection(connectionString);
+            await using var connection3 = new NpgsqlConnection(connectionString);
             
             var insert1 = connection1.BinaryBulkInsertAsync(SqlQueries.StatusCodesTableName, fakeStatusCodesPoints);
             var insert2 = connection2.BinaryBulkInsertAsync(SqlQueries.LatencyCountsTableName, fakeLatencyCountsPoints);
