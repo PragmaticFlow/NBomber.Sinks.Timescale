@@ -239,13 +239,16 @@ public class TimescaleDbSink : IReportingSink
 
     private PointLatencyCounts MapLatencyCount(ScenarioStats scnStats, DateTimeOffset currentTime)
     {
+        var fR = scnStats.Fail.Request;
+        
         var point = new PointLatencyCounts
         {
             Time = currentTime,
             LessOrEq800 = scnStats.Ok.Latency.LatencyCount.LessOrEq800,
             More800Less1200 = scnStats.Ok.Latency.LatencyCount.More800Less1200,
             MoreOrEq1200 = scnStats.Ok.Latency.LatencyCount.MoreOrEq1200,
-            Scenario = scnStats.ScenarioName
+            Scenario = scnStats.ScenarioName,
+            FailReqCount = fR.Count
         };
         
         AddTestInfoTags(point);

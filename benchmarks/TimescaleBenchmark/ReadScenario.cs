@@ -97,6 +97,8 @@ public class ReadScenario
             fakePointLatencyCounts = faker.Generate<PointLatencyCounts>();
             fakePointStatusCodes = faker.Generate<PointStatusCodes>();
             fakePointStepStats = faker.Generate<PointStepStatsOk>();
+            
+            var rnd = new Random();
 
             var fakeLatencyCountsPoints = Enumerable
                 .Range(0, 2160)
@@ -110,10 +112,11 @@ public class ReadScenario
                     TestName = fakePointLatencyCounts.TestName,
                     ClusterId = fakePointLatencyCounts.ClusterId,
                     Scenario = fakePointLatencyCounts.Scenario,
-                    LessOrEq800 = fakePointLatencyCounts.LessOrEq800,
-                    More800Less1200 = fakePointLatencyCounts.More800Less1200,
-                    MoreOrEq1200 = fakePointLatencyCounts.MoreOrEq1200
-                })
+                    LessOrEq800 = rnd.Next(200, 4000) * rnd.Next(0, 2),
+                    More800Less1200 = rnd.Next(200, 4000) * rnd.Next(0, 2),
+                    MoreOrEq1200 = rnd.Next(200, 4000) * rnd.Next(0, 2),
+                    FailReqCount = rnd.Next(0, 300) * rnd.Next(0, 2) * rnd.Next(0, 2)
+                })  
                 .ToArray();
             
             var fakeStatusCodesPoints = Enumerable
@@ -138,26 +141,26 @@ public class ReadScenario
                 .Select(i => new PointStepStatsOk
                 { 
                     Time = startTime.AddSeconds(-5 * i),
-                    SessionId = sessionId,
-                    CurrentOperation = fakePointStepStats.CurrentOperation,
-                    NodeType = fakePointStepStats.NodeType,
-                    TestSuite = fakePointStepStats.TestSuite,
-                    TestName = fakePointStepStats.TestName,
-                    ClusterId = fakePointStepStats.ClusterId,
-                    Scenario = fakePointStepStats.Scenario,
                     Step = fakePointStepStats.Step,
-                    AllReqCount = fakePointStepStats.AllReqCount,
+                    Scenario = fakePointStepStats.Scenario,
+                    
+                    AllReqCount = rnd.Next(100, 300),
                     AllDataAll = fakePointStepStats.AllDataAll,
+                    
                     OkReqCount = fakePointStepStats.OkReqCount,
                     OkReqRps = fakePointStepStats.OkReqRps,
+                    FailReqCount = rnd.Next(0, 300) * rnd.Next(0, 2) * rnd.Next(0, 2),
+                    FailReqRps = fakePointStepStats.FailReqRps,
+                    
                     OkLatencyMax = fakePointStepStats.OkLatencyMax,
                     OkLatencyMean = fakePointStepStats.OkLatencyMean,
                     OkLatencyMin = fakePointStepStats.OkLatencyMin,
                     OkLatencyStdDev = fakePointStepStats.OkLatencyStdDev,
-                    OkLatencyP50 = fakePointStepStats.OkLatencyP50,
-                    OkLatencyP75 = fakePointStepStats.OkLatencyP75,
-                    OkLatencyP95 = fakePointStepStats.OkLatencyP95,
-                    OkLatencyP99 = fakePointStepStats.OkLatencyP99,
+                    OkLatencyP50 = Math.Round(200 + rnd.NextDouble() * 230, 2),
+                    OkLatencyP75 = Math.Round(210 + rnd.NextDouble() * 240, 2),
+                    OkLatencyP95 = Math.Round(220 + rnd.NextDouble() * 250, 2),
+                    OkLatencyP99 = Math.Round(230 + rnd.NextDouble() * 260, 2),
+                    
                     OkDataMin = fakePointStepStats.OkDataMin,
                     OkDataMean = fakePointStepStats.OkDataMean,
                     OkDataMax = fakePointStepStats.OkDataMax,
@@ -166,10 +169,14 @@ public class ReadScenario
                     OkDataP75 = fakePointStepStats.OkDataP75,
                     OkDataP95 = fakePointStepStats.OkDataP95,
                     OkDataP99 = fakePointStepStats.OkDataP99,
-                    FailReqCount = fakePointStepStats.FailReqCount,
-                    FailReqRps = fakePointStepStats.FailReqRps,
                     
-                    SimulationValue = fakePointStepStats.SimulationValue
+                    SimulationValue = fakePointStepStats.SimulationValue,
+                    SessionId = sessionId,
+                    CurrentOperation = fakePointStepStats.CurrentOperation,
+                    NodeType = fakePointStepStats.NodeType,
+                    TestSuite = fakePointStepStats.TestSuite,
+                    TestName = fakePointStepStats.TestName,
+                    ClusterId = fakePointStepStats.ClusterId
                 })
                 .ToArray();
             
