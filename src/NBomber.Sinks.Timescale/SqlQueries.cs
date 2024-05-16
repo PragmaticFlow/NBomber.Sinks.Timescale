@@ -25,7 +25,8 @@ public static class SqlQueries
             ""{ColumnNames.Scenario}"" TEXT,
             ""{ColumnNames.LessOrEq800}"" INT,
             ""{ColumnNames.More800Less1200}"" INT,
-            ""{ColumnNames.MoreOrEq1200}"" INT
+            ""{ColumnNames.MoreOrEq1200}"" INT,
+            ""{ColumnNames.FailReqCount}"" INT
         );
         SELECT create_hypertable('{LatencyCountsTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
         CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {LatencyCountsTableName} ({ColumnNames.SessionId});
