@@ -21,9 +21,9 @@
 
     <ItemGroup>
       <PackageReference Include="NBomber.Contracts" Version="5.5.0" />
-      <PackageReference Include="Npgsql" Version="8.0.2" />
-      <PackageReference Include="RepoDb.PostgreSql" Version="1.13.2-alpha1" />
-      <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.13.2-alpha1" />
+      <PackageReference Include="Npgsql" Version="8.0.3" />
+      <PackageReference Include="RepoDb.PostgreSql" Version="1.13.1" />
+      <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.13.1" />
     </ItemGroup>
 
     <ItemGroup>
