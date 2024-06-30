@@ -102,26 +102,20 @@ public class TimescaleDbSink : IReportingSink
     {
         if (_mainConnection != null)
         {
-            await using var connection1 = new NpgsqlConnection(_connectionString);
-            await using var connection2 = new NpgsqlConnection(_connectionString);
-            await using var connection3 = new NpgsqlConnection(_connectionString);
-            
             var currentTime = DateTimeOffset.UtcNow;
 
             var updatedStats = stats.Select(AddGlobalInfoStep).ToArray();
             var ok = updatedStats.SelectMany(stats => MapStepsStatsOk(stats, currentTime)).ToArray();
             var fail = updatedStats.SelectMany(stats => MapStepsStatsFail(stats, currentTime)).ToArray();
             
-            var t1 = _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsOkTableName, ok);
-            var t2 = connection1.BinaryBulkInsertAsync(SqlQueries.StepStatsFailTableName, fail);
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsOkTableName, ok);
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsFailTableName, fail);
 
             var latencyCounts = stats.Select(stats => MapLatencyCount(stats, currentTime)).ToArray();
-            var t3 = connection2.BinaryBulkInsertAsync(SqlQueries.LatencyCountsTableName, latencyCounts);
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.LatencyCountsTableName, latencyCounts);
 
             var statusCodes = stats.SelectMany(stats => MapStatusCodes(stats, currentTime)).ToArray();
-            var t4 = connection3.BinaryBulkInsertAsync(SqlQueries.StatusCodesTableName, statusCodes);
-
-            await Task.WhenAll(t1, t2, t3, t4);
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StatusCodesTableName, statusCodes);
         }
     }
 
