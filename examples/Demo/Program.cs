@@ -20,16 +20,16 @@ public class TimescaleDBReportingExample
             var step2 = await Step.Run("get_product", context, async () =>
             {
                 await Task.Delay(1000);
-                return Response.Ok(sizeBytes: 20, statusCode: "200");
+                return Response.Ok(sizeBytes: 20, statusCode: "200", message: "huy");
             });
 
             var step3 = await Step.Run("buy_product", context, async () =>
             {
                 await Task.Delay(2000);
-                return Response.Ok(sizeBytes: 30, statusCode: "200");
+                return Response.Ok(sizeBytes: 30, statusCode: "200", message: "my");
             });
 
-            return Response.Ok(statusCode: "201");
+            return Response.Ok(statusCode: "201", message: "hey");
         })
         .WithWarmUpDuration(TimeSpan.FromSeconds(3))
         .WithLoadSimulations(

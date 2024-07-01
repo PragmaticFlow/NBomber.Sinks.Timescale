@@ -1,5 +1,7 @@
 #pragma warning disable CS1591
 
+using System.Text.Json;
+using FSharp.Json;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 using RepoDb;
@@ -61,11 +63,8 @@ public class TimescaleDbSink : IReportingSink
         await _mainConnection.OpenAsync();
         
         await _mainConnection.ExecuteNonQueryAsync(
-            SqlQueries.CreateClusterStatsTable
-            + SqlQueries.CreateStatusCodesTable
-            + SqlQueries.CreateLatencyCountsTable 
-            + SqlQueries.CreateStepStatsOkTable
-            + SqlQueries.CreateStepStatsFailTable
+            SqlQueries.CreateStepStatsTable
+            + SqlQueries.CreateClusterStatsTable
         );
     }
 
@@ -73,16 +72,16 @@ public class TimescaleDbSink : IReportingSink
     {
         if (_mainConnection != null)
         {
-            var point = new PointClusterStats
+            var nodeInfo = _context.GetNodeInfo();
+            
+            var record = new NodeInfoDbRecord
             {
-                Time = DateTime.UtcNow,
-                NodeCount = 1,
-                NodeCpuCount = _context.GetNodeInfo().CoresCount,
+                Time = DateTimeOffset.UtcNow,
+                SessionId = _context.TestInfo.SessionId,
+                NodeInfo = Json.serialize(nodeInfo)
             };
             
-            AddTestInfoTags(point);
-           
-            await _mainConnection.InsertAsync(SqlQueries.ClusterStatsTableName, point);
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.ClusterStatsTableName, new [] { record });
         }
     }
 
@@ -103,19 +102,12 @@ public class TimescaleDbSink : IReportingSink
         if (_mainConnection != null)
         {
             var currentTime = DateTimeOffset.UtcNow;
-
-            var updatedStats = stats.Select(AddGlobalInfoStep).ToArray();
-            var ok = updatedStats.SelectMany(stats => MapStepsStatsOk(stats, currentTime)).ToArray();
-            var fail = updatedStats.SelectMany(stats => MapStepsStatsFail(stats, currentTime)).ToArray();
             
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsOkTableName, ok);
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsFailTableName, fail);
-
-            var latencyCounts = stats.Select(stats => MapLatencyCount(stats, currentTime)).ToArray();
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.LatencyCountsTableName, latencyCounts);
-
-            var statusCodes = stats.SelectMany(stats => MapStatusCodes(stats, currentTime)).ToArray();
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StatusCodesTableName, statusCodes);
+            var points = stats.Select(AddGlobalInfoStep)
+                .SelectMany(step => MapToPoint(step, currentTime))
+                .ToArray();
+            
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points);
         }
     }
 
@@ -126,147 +118,38 @@ public class TimescaleDbSink : IReportingSink
 
         return scnStats;
     }
-    
-    private void AddTestInfoTags(PointBase point)
+
+    private PointDbRecord[] MapToPoint(ScenarioStats scnStats, DateTimeOffset currentTime)
     {
         var nodeInfo = _context.GetNodeInfo();
         var testInfo = _context.TestInfo;
-
-        point.SessionId = testInfo.SessionId;
-        point.CurrentOperation = nodeInfo.CurrentOperation.ToString().ToLower();
-        point.NodeType = nodeInfo.NodeType.ToString();
-        point.TestSuite = testInfo.TestSuite;
-        point.TestName = testInfo.TestName;
-        point.ClusterId = testInfo.ClusterId;
-    }
-    
-    private IEnumerable<PointStepStatsOk> MapStepsStatsOk(ScenarioStats scnStats, DateTimeOffset currentTime)
-    {
-        var simulation = scnStats.LoadSimulationStats;
-
-        return scnStats.StepStats.Select(step =>
-        {
-            var okR = step.Ok.Request;
-            var okL = step.Ok.Latency;
-            var okD = step.Ok.DataTransfer;
-
-            var fR = step.Fail.Request;
-
-            var ok = new PointStepStatsOk
-            {
-                Time = currentTime,
-                Step = step.StepName,
-                Scenario = scnStats.ScenarioName,
-                
-                AllReqCount = step.Ok.Request.Count + step.Fail.Request.Count,
-                AllDataAll = step.Ok.DataTransfer.AllBytes + step.Fail.DataTransfer.AllBytes,
-                
-                OkReqCount = okR.Count,
-                OkReqRps = okR.RPS,
-                FailReqCount = fR.Count,
-                FailReqRps = fR.RPS,
-                
-                OkLatencyMin = okL.MinMs,
-                OkLatencyMean = okL.MeanMs,
-                OkLatencyMax = okL.MaxMs,
-                OkLatencyStdDev = okL.StdDev,
-                OkLatencyP50 = okL.Percent50,
-                OkLatencyP75 = okL.Percent75,
-                OkLatencyP95 = okL.Percent95,
-                OkLatencyP99 = okL.Percent99,
-                
-                OkDataMin = okD.MinBytes,
-                OkDataMean = okD.MeanBytes,
-                OkDataMax = okD.MaxBytes,
-                OkDataAll = okD.AllBytes,
-                OkDataP50 = okD.Percent50,
-                OkDataP75 = okD.Percent75,
-                OkDataP95 = okD.Percent95,
-                OkDataP99 = okD.Percent99,
-                
-                SimulationValue = simulation.Value
-            };
-            
-            AddTestInfoTags(ok);
-            
-            return ok;
-        });
-    }
-    
-    private IEnumerable<PointStepStatsFail> MapStepsStatsFail(ScenarioStats scnStats, DateTimeOffset currentTime)
-    {
-        return scnStats.StepStats.Select(step =>
-        {
-            var fL = step.Fail.Latency;
-            var fD = step.Fail.DataTransfer;
-
-            var fail = new PointStepStatsFail
-            {
-                Time = currentTime,
-                Step = step.StepName,
-                Scenario = scnStats.ScenarioName,
-                
-                FailLatencyMin = fL.MinMs,
-                FailLatencyMean = fL.MeanMs,
-                FailLatencyMax = fL.MaxMs,
-                FailLatencyStdDev = fL.StdDev,
-                FailLatencyP50 = fL.Percent50,
-                FailLatencyP75 = fL.Percent75,
-                FailLatencyP95 = fL.Percent95,
-                FailLatencyP99 = fL.Percent99,
-
-                FailDataMin = fD.MinBytes,
-                FailDataMean = fD.MeanBytes,
-                FailDataMax = fD.MaxBytes,
-                FailDataAll = fD.AllBytes,
-                FailDataP50 = fD.Percent50,
-                FailDataP75 = fD.Percent75,
-                FailDataP95 = fD.Percent95,
-                FailDataP99 = fD.Percent99
-            };
-            
-            AddTestInfoTags(fail);
-            
-            return fail;
-        });
-    }
-
-    private PointLatencyCounts MapLatencyCount(ScenarioStats scnStats, DateTimeOffset currentTime)
-    {
-        var fR = scnStats.Fail.Request;
         
-        var point = new PointLatencyCounts
-        {
-            Time = currentTime,
-            LessOrEq800 = scnStats.Ok.Latency.LatencyCount.LessOrEq800,
-            More800Less1200 = scnStats.Ok.Latency.LatencyCount.More800Less1200,
-            MoreOrEq1200 = scnStats.Ok.Latency.LatencyCount.MoreOrEq1200,
-            Scenario = scnStats.ScenarioName,
-            FailReqCount = fR.Count
-        };
-        
-        AddTestInfoTags(point);
-
-        return point;
-    }
-
-    private IEnumerable<PointStatusCodes> MapStatusCodes(ScenarioStats scnStats, DateTimeOffset currentTime)
-    {
-        return scnStats
-            .Ok.StatusCodes.Concat(scnStats.Fail.StatusCodes)
-            .Select(s =>
+        return scnStats.StepStats
+            .Select(step =>
             {
-                var point = new PointStatusCodes
+                // clear status code message for Bombing
+                if (nodeInfo.CurrentOperation != OperationType.Complete)
                 {
-                    Time = currentTime,
-                    StatusCode = s.StatusCode,
-                    Count = s.Count,
-                    Scenario = scnStats.ScenarioName
-                };
-
-                AddTestInfoTags(point);
-
-                return point;
-            });
+                    foreach (var status in step.Ok.StatusCodes)
+                        status.Message = "";
+                    
+                    foreach (var status in step.Fail.StatusCodes)
+                        status.Message = "";
+                }
+                return step;
+            })
+            .Select(step => new PointDbRecord
+            {
+                Time = currentTime,
+                SessionId = testInfo.SessionId,
+                CurrentOperation = nodeInfo.CurrentOperation,
+                TestSuite = testInfo.TestSuite,
+                TestName = testInfo.TestName,
+                Scenario = scnStats.ScenarioName,
+                Step = step.StepName,
+                OkStepStats = JsonSerializer.Serialize(step.Ok),
+                FailStepStats = JsonSerializer.Serialize(step.Fail)
+            })
+            .ToArray();
     }
 }
