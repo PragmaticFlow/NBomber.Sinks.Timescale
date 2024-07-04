@@ -1,4 +1,5 @@
-﻿using AutoBogus;
+﻿using System.Text.Json;
+using AutoBogus;
 using Npgsql;
 using RepoDb;
 using NBomber.Contracts;
@@ -15,29 +16,29 @@ public class ReadScenario
         return Scenario.Create("read_scenario", async ctx =>
         {
             var end = false;
-            var stepStatsRes = new List<PointDbRecord>();
-            var endTimeStepStats = startTime;
+            var result = new List<PointDbRecord>();
+            var endTime = startTime;
             
             while (!end)
             {
                 await using var connection = new NpgsqlConnection(connectionString);
 
-                var st = endTimeStepStats - TimeSpan.FromMinutes(10);
+                var st = endTime - TimeSpan.FromMinutes(10);
                 
                 var dataStepStats = connection.QueryAsync<PointDbRecord>(SqlQueries.StepStatsTable,
                     p => p.SessionId == sessionId 
-                    && p.Time <= endTimeStepStats
+                    && p.Time <= endTime
                     && p.Time >= st);
                 
-                var dataStepStatsArr = (await dataStepStats).ToArray();
+                var dataArray = (await dataStepStats).ToArray();
 
                 end = true;
                 
-                stepStatsRes.AddRange(dataStepStatsArr);
+                result.AddRange(dataArray);
 
-                if (dataStepStatsArr.Length >= 120)
+                if (dataArray.Length >= 120)
                 {
-                    endTimeStepStats = dataStepStatsArr[^1].Time - TimeSpan.FromSeconds(1);
+                    endTime = dataArray[^1].Time - TimeSpan.FromSeconds(1);
                     end = false;
                 }
             }
@@ -48,15 +49,11 @@ public class ReadScenario
         .WithLoadSimulations(Simulation.KeepConstant(1, TimeSpan.FromSeconds(30)))
         .WithInit(async ctx =>
         {
-            PointDbRecord fakePoint = new();
-            
             var faker = AutoFaker.Create();
-            
-            fakePoint = faker.Generate<PointDbRecord>();
-            
+            var fakePoint = faker.Generate<PointDbRecord>();
             var rnd = new Random();
             
-            var fakeStepStatsPoints = Enumerable
+            var fakePoints = Enumerable
                 .Range(0, 2160)
                 .Select(i => new PointDbRecord
                 { 
@@ -81,6 +78,15 @@ public class ReadScenario
                     OkLatencyP95 = Math.Round(220 + rnd.NextDouble() * 250, 2),
                     OkLatencyP99 = Math.Round(230 + rnd.NextDouble() * 260, 2),
                     
+                    FailLatencyMax = fakePoint.OkLatencyMax,
+                    FailLatencyMean = fakePoint.OkLatencyMean,
+                    FailLatencyMin = fakePoint.OkLatencyMin,
+                    FailLatencyStdDev = fakePoint.OkLatencyStdDev,
+                    FailLatencyP50 = Math.Round(200 + rnd.NextDouble() * 230, 2),
+                    FailLatencyP75 = Math.Round(210 + rnd.NextDouble() * 240, 2),
+                    FailLatencyP95 = Math.Round(220 + rnd.NextDouble() * 250, 2),
+                    FailLatencyP99 = Math.Round(230 + rnd.NextDouble() * 260, 2),
+                    
                     OkDataMin = fakePoint.OkDataMin,
                     OkDataMean = fakePoint.OkDataMean,
                     OkDataMax = fakePoint.OkDataMax,
@@ -90,17 +96,31 @@ public class ReadScenario
                     OkDataP95 = fakePoint.OkDataP95,
                     OkDataP99 = fakePoint.OkDataP99,
                     
+                    FailDataMin = fakePoint.OkDataMin,
+                    FailDataMean = fakePoint.OkDataMean,
+                    FailDataMax = fakePoint.OkDataMax,
+                    FailDataAll = fakePoint.OkDataAll,
+                    FailDataP50 = fakePoint.OkDataP50,
+                    FailDataP75 = fakePoint.OkDataP75,
+                    FailDataP95 = fakePoint.OkDataP95,
+                    FailDataP99 = fakePoint.OkDataP99,
+                    
                     SimulationValue = fakePoint.SimulationValue,
                     SessionId = sessionId,
                     CurrentOperation = fakePoint.CurrentOperation,
                     TestSuite = fakePoint.TestSuite,
                     TestName = fakePoint.TestName,
+                    
+                    OkStatusCodes = JsonSerializer.Serialize(fakePoint.OkStatusCodes),
+                    OkLatencyCount = JsonSerializer.Serialize(fakePoint.OkLatencyCount),
+                    FailStatusCodes = JsonSerializer.Serialize(fakePoint.FailStatusCodes),
+                    FailLatencyCount = JsonSerializer.Serialize(fakePoint.FailLatencyCount)
                 })
                 .ToArray();
             
             await using var connection = new NpgsqlConnection(connectionString);
             
-            var insert = connection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, fakeStepStatsPoints);
+            var insert = connection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, fakePoints);
 
             await insert;
         });
