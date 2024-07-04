@@ -63,6 +63,8 @@ public static class SqlQueries
             ""{ColumnNames.FailDataP75}"" BIGINT,
             ""{ColumnNames.FailDataP95}"" BIGINT,
             ""{ColumnNames.FailDataP99}"" BIGINT,
+            ""{ColumnNames.FailStatusCodes}"" JSONB,
+            ""{ColumnNames.FailLatencyCount}"" JSONB,
             
             ""{ColumnNames.SimulationValue}"" INT
         );
