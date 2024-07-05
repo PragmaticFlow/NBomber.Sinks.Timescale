@@ -1,6 +1,6 @@
 ﻿namespace NBomber.Sinks.Timescale.Contracts;
 
-static class ColumnNames
+public static class ColumnNames
 {
     public const string Time = "time";
     public const string SessionId = "session_id";
