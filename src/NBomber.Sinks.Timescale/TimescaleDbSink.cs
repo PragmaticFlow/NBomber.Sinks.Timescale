@@ -76,7 +76,7 @@ public class TimescaleDbSink : IReportingSink
             
             var record = new NodeInfoDbRecord
             {
-                Time = DateTimeOffset.UtcNow,
+                Time = DateTime.UtcNow,
                 SessionId = _context.TestInfo.SessionId,
                 NodeInfo = Json.serialize(nodeInfo)
             };
@@ -101,7 +101,7 @@ public class TimescaleDbSink : IReportingSink
     {
         if (_mainConnection != null)
         {
-            var currentTime = DateTimeOffset.UtcNow;
+            var currentTime = DateTime.UtcNow;
             
             var points = stats.Select(AddGlobalInfoStep)
                 .SelectMany(step => MapToPoint(step, currentTime))
@@ -119,7 +119,7 @@ public class TimescaleDbSink : IReportingSink
         return scnStats;
     }
 
-    private PointDbRecord[] MapToPoint(ScenarioStats scnStats, DateTimeOffset currentTime)
+    private PointDbRecord[] MapToPoint(ScenarioStats scnStats, DateTime currentTime)
     {
         var nodeInfo = _context.GetNodeInfo();
         var testInfo = _context.TestInfo;
