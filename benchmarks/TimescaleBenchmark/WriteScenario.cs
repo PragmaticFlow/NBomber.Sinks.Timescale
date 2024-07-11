@@ -22,7 +22,7 @@ public class WriteScenario
             {
                 await using var connection = new NpgsqlConnection(connectionString);
             
-                var curTime = DateTimeOffset.UtcNow;
+                var curTime = DateTime.UtcNow;
             
                 fakePoint.Time = curTime;
                 fakePoint.SessionId = ctx.ScenarioInfo.InstanceNumber.ToString();

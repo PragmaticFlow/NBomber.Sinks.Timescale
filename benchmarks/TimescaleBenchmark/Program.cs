@@ -28,7 +28,7 @@ public class TimescaleDBReportingExample
         connection.ExecuteNonQuery(SqlQueries.CreateStepStatsTable + SqlQueries.CreateClusterStatsTable);
         
         var writeScenario = new WriteScenario().Create(connectionString);
-        var readScenario = new ReadScenario().Create(connectionString, DateTimeOffset.UtcNow, sessionId: "0");
+        var readScenario = new ReadScenario().Create(connectionString, DateTime.UtcNow, sessionId: "0");
         
         NBomberRunner
             .RegisterScenarios(writeScenario)

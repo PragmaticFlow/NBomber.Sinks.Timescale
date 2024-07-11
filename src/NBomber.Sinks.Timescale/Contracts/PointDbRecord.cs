@@ -7,7 +7,7 @@ using NBomber.Contracts.Stats;
 
 public class PointDbRecord
 {
-    [Column(ColumnNames.Time)] public DateTimeOffset Time { get; set; }
+    [Column(ColumnNames.Time)] public DateTime Time { get; set; }
     [Column(ColumnNames.SessionId)] public string SessionId { get; set; }
     [Column(ColumnNames.CurrentOperation)] public OperationType CurrentOperation { get; set; }
     
@@ -66,7 +66,7 @@ public class PointDbRecord
 
 public class NodeInfoDbRecord
 {
-    [Column(ColumnNames.Time)] public DateTimeOffset Time { get; set; }
+    [Column(ColumnNames.Time)] public DateTime Time { get; set; }
     [Column(ColumnNames.SessionId)] public string SessionId { get; set; }
     [Column(ColumnNames.NodeInfo)] public string NodeInfo { get; set; }
 }

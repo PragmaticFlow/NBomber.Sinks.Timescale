@@ -11,7 +11,7 @@ namespace TimescaleBenchmark;
 
 public class ReadScenario
 {
-    public ScenarioProps Create(string connectionString, DateTimeOffset startTime, string sessionId)
+    public ScenarioProps Create(string connectionString, DateTime startTime, string sessionId)
     {
         return Scenario.Create("read_scenario", async ctx =>
         {
