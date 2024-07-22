@@ -64,7 +64,7 @@ public class TimescaleDbSink : IReportingSink
         
         await _mainConnection.ExecuteNonQueryAsync(
             SqlQueries.CreateStepStatsTable
-            + SqlQueries.CreateClusterStatsTable
+            + SqlQueries.CreateSessionsTable
         );
     }
 
@@ -73,21 +73,25 @@ public class TimescaleDbSink : IReportingSink
         if (_mainConnection != null)
         {
             var nodeInfo = _context.GetNodeInfo();
-            
+            var testInfo = _context.TestInfo;
+
             var record = new NodeInfoDbRecord
             {
                 Time = DateTime.UtcNow,
-                SessionId = _context.TestInfo.SessionId,
+                SessionId = testInfo.SessionId,
+                CurrentOperation = OperationType.Bombing,
+                TestSuite = testInfo.TestSuite,
+                TestName = testInfo.TestName,
                 NodeInfo = Json.serialize(nodeInfo)
             };
             
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.ClusterStatsTableName, new [] { record });
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.SessionsTable, new [] { record });
         }
     }
 
     public Task SaveRealtimeStats(ScenarioStats[] stats) => SaveScenarioStats(stats);
 
-    public Task SaveFinalStats(NodeStats stats) => SaveScenarioStats(stats.ScenarioStats);
+    public Task SaveFinalStats(NodeStats stats) => SaveScenarioStats(stats.ScenarioStats, true);
 
     public Task Stop() => Task.CompletedTask;
 
@@ -97,7 +101,7 @@ public class TimescaleDbSink : IReportingSink
         _mainConnection.Dispose();
     }
 
-    private async Task SaveScenarioStats(ScenarioStats[] stats)
+    private async Task SaveScenarioStats(ScenarioStats[] stats, bool isFinal = false)
     {
         if (_mainConnection != null)
         {
@@ -108,6 +112,16 @@ public class TimescaleDbSink : IReportingSink
                 .ToArray();
             
             await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points);
+
+            if (isFinal) 
+            {
+                var nodeInfo = _mainConnection.Query<NodeInfoDbRecord>(SqlQueries.SessionsTable, i => i.SessionId == _context.TestInfo.SessionId).FirstOrDefault();
+                if (nodeInfo != null) 
+                {
+                    nodeInfo.CurrentOperation = OperationType.Stop;
+                    await _mainConnection.UpdateAsync(nodeInfo);
+                }
+            }
         }
     }
 
@@ -143,8 +157,6 @@ public class TimescaleDbSink : IReportingSink
                 Time = currentTime,
                 SessionId = testInfo.SessionId,
                 CurrentOperation = nodeInfo.CurrentOperation,
-                TestSuite = testInfo.TestSuite,
-                TestName = testInfo.TestName,
                 Scenario = scnStats.ScenarioName,
                 Step = step.StepName,
 

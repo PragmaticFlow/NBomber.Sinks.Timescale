@@ -26,7 +26,8 @@ public class WriteScenario
             
                 fakePoint.Time = curTime;
                 fakePoint.SessionId = ctx.ScenarioInfo.InstanceNumber.ToString();
-                
+                fakePoint.CurrentOperation = NBomber.Contracts.Stats.OperationType.Bombing;
+
                 await connection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, Enumerable.Repeat(fakePoint, 5));
                 
                 return Response.Ok();

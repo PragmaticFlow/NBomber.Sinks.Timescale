@@ -10,7 +10,7 @@ public class TimescaleDBReportingExample
 {
      private const string CleanDbSql = $"""
          DROP TABLE IF EXISTS {SqlQueries.StepStatsTable};
-         DROP TABLE IF EXISTS {SqlQueries.ClusterStatsTableName};
+         DROP TABLE IF EXISTS {SqlQueries.SessionsTable};
      """;
     
     public void Run()
@@ -25,13 +25,13 @@ public class TimescaleDBReportingExample
 
         connection.ExecuteNonQuery(CleanDbSql);
         
-        connection.ExecuteNonQuery(SqlQueries.CreateStepStatsTable + SqlQueries.CreateClusterStatsTable);
+        connection.ExecuteNonQuery(SqlQueries.CreateStepStatsTable + SqlQueries.CreateSessionsTable);
         
         var writeScenario = new WriteScenario().Create(connectionString);
         var readScenario = new ReadScenario().Create(connectionString, DateTime.UtcNow, sessionId: "0");
         
         NBomberRunner
-            .RegisterScenarios(writeScenario)
+            .RegisterScenarios(readScenario)
             .WithTestSuite("reporting")
             .WithTestName("timescale_db_demo")
             .Run();
