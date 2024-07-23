@@ -6,8 +6,8 @@ namespace NBomber.Sinks.Timescale;
 
 public static class SqlQueries
 {
-    public const string StepStatsTable = "step_stats";
-    public const string SessionsTable = "sessions";
+    public const string StepStatsTable = "nb_step_stats";
+    public const string SessionsTable = "nb_sessions";
     
     public static string CreateStepStatsTable => $@"
         CREATE TABLE IF NOT EXISTS ""{StepStatsTable}""
