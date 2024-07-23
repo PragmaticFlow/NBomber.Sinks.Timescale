@@ -131,10 +131,7 @@ public class TimescaleDbSink : IReportingSink
                         CurrentOperation = OperationType.Complete,
                     };
 
-                    var fields = Field.Parse<NodeInfoDbRecord>(e => new
-                    {
-                        e.CurrentOperation
-                    });
+                    var fields = Field.Parse<NodeInfoDbRecord>(e => e.CurrentOperation);
                
                     await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, entity, fields: fields, transaction: transaction);
                 
