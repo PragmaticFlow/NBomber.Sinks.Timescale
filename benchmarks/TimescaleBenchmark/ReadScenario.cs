@@ -108,8 +108,6 @@ public class ReadScenario
                     SimulationValue = fakePoint.SimulationValue,
                     SessionId = sessionId,
                     CurrentOperation = fakePoint.CurrentOperation,
-                    //TestSuite = fakePoint.TestSuite,
-                    //TestName = fakePoint.TestName,
                     
                     OkStatusCodes = JsonSerializer.Serialize(fakePoint.OkStatusCodes),
                     OkLatencyCount = JsonSerializer.Serialize(fakePoint.OkLatencyCount),

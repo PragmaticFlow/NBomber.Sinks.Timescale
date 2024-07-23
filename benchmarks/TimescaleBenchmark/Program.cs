@@ -20,7 +20,7 @@ public class TimescaleDBReportingExample
             .UsePostgreSql();
 
         const string connectionString = "Host=localhost;Port=5432;Database=metricsdb;Username=timescaledb;Password=timescaledb;Pooling=true;Maximum Pool Size=300;";
-        
+
         using var connection = new NpgsqlConnection(connectionString);
 
         connection.ExecuteNonQuery(CleanDbSql);
@@ -31,7 +31,7 @@ public class TimescaleDBReportingExample
         var readScenario = new ReadScenario().Create(connectionString, DateTime.UtcNow, sessionId: "0");
         
         NBomberRunner
-            .RegisterScenarios(readScenario)
+            .RegisterScenarios(writeScenario)
             .WithTestSuite("reporting")
             .WithTestName("timescale_db_demo")
             .Run();

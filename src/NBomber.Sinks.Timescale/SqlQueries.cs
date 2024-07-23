@@ -74,13 +74,11 @@ public static class SqlQueries
         CREATE TABLE IF NOT EXISTS ""{SessionsTable}""
         (            
             ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
-            ""{ColumnNames.SessionId}"" TEXT NOT NULL,
+            ""{ColumnNames.SessionId}"" TEXT PRIMARY KEY,
             ""{ColumnNames.CurrentOperation}"" TEXT, 
             ""{ColumnNames.TestSuite}"" TEXT,
             ""{ColumnNames.TestName}"" TEXT,
             ""{ColumnNames.NodeInfo}"" JSONB            
-        );
-        SELECT create_hypertable('{SessionsTable}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {SessionsTable} ({ColumnNames.SessionId});
+        );    
        ";
-}   
+}

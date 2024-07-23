@@ -9,6 +9,7 @@ using ILogger = Serilog.ILogger;
 using NBomber.Contracts;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
+using System.Data;
 
 namespace NBomber.Sinks.Timescale;
 
@@ -91,7 +92,7 @@ public class TimescaleDbSink : IReportingSink
 
     public Task SaveRealtimeStats(ScenarioStats[] stats) => SaveScenarioStats(stats);
 
-    public Task SaveFinalStats(NodeStats stats) => SaveScenarioStats(stats.ScenarioStats, true);
+    public Task SaveFinalStats(NodeStats stats) => SaveScenarioStats(stats.ScenarioStats, isFinal: true);
 
     public Task Stop() => Task.CompletedTask;
 
@@ -111,15 +112,39 @@ public class TimescaleDbSink : IReportingSink
                 .SelectMany(step => MapToPoint(step, currentTime))
                 .ToArray();
             
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points);
-
-            if (isFinal) 
+            if (!isFinal)
             {
-                var nodeInfo = _mainConnection.Query<NodeInfoDbRecord>(SqlQueries.SessionsTable, i => i.SessionId == _context.TestInfo.SessionId).FirstOrDefault();
-                if (nodeInfo != null) 
+                await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points);
+            }
+            else
+            {
+                using (var transaction = _mainConnection.EnsureOpen().BeginTransaction())
                 {
-                    nodeInfo.CurrentOperation = OperationType.Stop;
-                    await _mainConnection.UpdateAsync(nodeInfo);
+                    await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points, transaction: (NpgsqlTransaction) transaction);
+
+                    var nodeInfo = _context.GetNodeInfo();
+                    var testInfo = _context.TestInfo;
+
+                    var entity = new NodeInfoDbRecord
+                    {
+                        SessionId = testInfo.SessionId,
+                        CurrentOperation = OperationType.Complete,
+                    };
+
+                    var fields = Field.Parse<NodeInfoDbRecord>(e => new
+                    {
+                        e.CurrentOperation
+                    });
+
+                    try
+                    {
+                        await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, entity, fields: fields);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
+                    transaction.Commit();
                 }
             }
         }
