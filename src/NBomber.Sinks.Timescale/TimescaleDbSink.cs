@@ -136,7 +136,7 @@ public class TimescaleDbSink : IReportingSink
                         e.CurrentOperation
                     });
                
-                    await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, entity, fields: fields);
+                    await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, entity, fields: fields, transaction: transaction);
                 
                     transaction.Commit();
                 }
