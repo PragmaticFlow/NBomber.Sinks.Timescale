@@ -10,7 +10,7 @@ public class TimescaleDBReportingExample
 {
      private const string CleanDbSql = $"""
          DROP TABLE IF EXISTS {SqlQueries.StepStatsTable};
-         DROP TABLE IF EXISTS {SqlQueries.ClusterStatsTableName};
+         DROP TABLE IF EXISTS {SqlQueries.SessionsTable};
      """;
     
     public void Run()
@@ -20,12 +20,12 @@ public class TimescaleDBReportingExample
             .UsePostgreSql();
 
         const string connectionString = "Host=localhost;Port=5432;Database=metricsdb;Username=timescaledb;Password=timescaledb;Pooling=true;Maximum Pool Size=300;";
-        
+
         using var connection = new NpgsqlConnection(connectionString);
 
         connection.ExecuteNonQuery(CleanDbSql);
         
-        connection.ExecuteNonQuery(SqlQueries.CreateStepStatsTable + SqlQueries.CreateClusterStatsTable);
+        connection.ExecuteNonQuery(SqlQueries.CreateStepStatsTable + SqlQueries.CreateSessionsTable);
         
         var writeScenario = new WriteScenario().Create(connectionString);
         var readScenario = new ReadScenario().Create(connectionString, DateTime.UtcNow, sessionId: "0");

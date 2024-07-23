@@ -9,6 +9,7 @@ using ILogger = Serilog.ILogger;
 using NBomber.Contracts;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
+using System.Data;
 
 namespace NBomber.Sinks.Timescale;
 
@@ -64,7 +65,7 @@ public class TimescaleDbSink : IReportingSink
         
         await _mainConnection.ExecuteNonQueryAsync(
             SqlQueries.CreateStepStatsTable
-            + SqlQueries.CreateClusterStatsTable
+            + SqlQueries.CreateSessionsTable
         );
     }
 
@@ -73,21 +74,25 @@ public class TimescaleDbSink : IReportingSink
         if (_mainConnection != null)
         {
             var nodeInfo = _context.GetNodeInfo();
-            
+            var testInfo = _context.TestInfo;
+
             var record = new NodeInfoDbRecord
             {
                 Time = DateTime.UtcNow,
-                SessionId = _context.TestInfo.SessionId,
+                SessionId = testInfo.SessionId,
+                CurrentOperation = OperationType.Bombing,
+                TestSuite = testInfo.TestSuite,
+                TestName = testInfo.TestName,
                 NodeInfo = Json.serialize(nodeInfo)
             };
             
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.ClusterStatsTableName, new [] { record });
+            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.SessionsTable, new [] { record });
         }
     }
 
     public Task SaveRealtimeStats(ScenarioStats[] stats) => SaveScenarioStats(stats);
 
-    public Task SaveFinalStats(NodeStats stats) => SaveScenarioStats(stats.ScenarioStats);
+    public Task SaveFinalStats(NodeStats stats) => SaveScenarioStats(stats.ScenarioStats, isFinal: true);
 
     public Task Stop() => Task.CompletedTask;
 
@@ -97,7 +102,7 @@ public class TimescaleDbSink : IReportingSink
         _mainConnection.Dispose();
     }
 
-    private async Task SaveScenarioStats(ScenarioStats[] stats)
+    private async Task SaveScenarioStats(ScenarioStats[] stats, bool isFinal = false)
     {
         if (_mainConnection != null)
         {
@@ -107,7 +112,31 @@ public class TimescaleDbSink : IReportingSink
                 .SelectMany(step => MapToPoint(step, currentTime))
                 .ToArray();
             
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points);
+            if (!isFinal)
+            {
+                await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points);
+            }
+            else
+            {
+                using (var transaction = _mainConnection.EnsureOpen().BeginTransaction())
+                {
+                    await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points, transaction: (NpgsqlTransaction) transaction);
+
+                    var testInfo = _context.TestInfo;
+
+                    var queryEntity = new NodeInfoDbRecord
+                    {
+                        SessionId = testInfo.SessionId,
+                        CurrentOperation = OperationType.Complete,
+                    };
+
+                    var fields = Field.Parse<NodeInfoDbRecord>(e => e.CurrentOperation);
+               
+                    await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, queryEntity, fields: fields, transaction: transaction);
+                
+                    transaction.Commit();
+                }
+            }
         }
     }
 
@@ -143,8 +172,6 @@ public class TimescaleDbSink : IReportingSink
                 Time = currentTime,
                 SessionId = testInfo.SessionId,
                 CurrentOperation = nodeInfo.CurrentOperation,
-                TestSuite = testInfo.TestSuite,
-                TestName = testInfo.TestName,
                 Scenario = scnStats.ScenarioName,
                 Step = step.StepName,
 

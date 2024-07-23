@@ -6,8 +6,8 @@ namespace NBomber.Sinks.Timescale;
 
 public static class SqlQueries
 {
-    public const string StepStatsTable = "step_stats";
-    public const string ClusterStatsTableName = "cluster_stats";
+    public const string StepStatsTable = "nb_step_stats";
+    public const string SessionsTable = "nb_sessions";
     
     public static string CreateStepStatsTable => $@"
         CREATE TABLE IF NOT EXISTS ""{StepStatsTable}""
@@ -16,8 +16,6 @@ public static class SqlQueries
             ""{ColumnNames.SessionId}"" TEXT NOT NULL,
             ""{ColumnNames.CurrentOperation}"" TEXT,            
             
-            ""{ColumnNames.TestSuite}"" TEXT,
-            ""{ColumnNames.TestName}"" TEXT,
             ""{ColumnNames.Scenario}"" TEXT,
             ""{ColumnNames.Step}"" TEXT,            
             
@@ -72,14 +70,15 @@ public static class SqlQueries
         CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsTable} ({ColumnNames.SessionId});
    ";
     
-    public static string CreateClusterStatsTable => $@"
-        CREATE TABLE IF NOT EXISTS ""{ClusterStatsTableName}""
+    public static string CreateSessionsTable => $@"
+        CREATE TABLE IF NOT EXISTS ""{SessionsTable}""
         (            
             ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
-            ""{ColumnNames.SessionId}"" TEXT NOT NULL,            
+            ""{ColumnNames.SessionId}"" TEXT PRIMARY KEY,
+            ""{ColumnNames.CurrentOperation}"" TEXT, 
+            ""{ColumnNames.TestSuite}"" TEXT,
+            ""{ColumnNames.TestName}"" TEXT,
             ""{ColumnNames.NodeInfo}"" JSONB            
-        );
-        SELECT create_hypertable('{ClusterStatsTableName}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {ClusterStatsTableName} ({ColumnNames.SessionId});
+        );    
        ";
-}   
+}
