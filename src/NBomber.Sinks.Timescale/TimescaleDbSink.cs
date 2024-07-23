@@ -122,10 +122,9 @@ public class TimescaleDbSink : IReportingSink
                 {
                     await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points, transaction: (NpgsqlTransaction) transaction);
 
-                    var nodeInfo = _context.GetNodeInfo();
                     var testInfo = _context.TestInfo;
 
-                    var entity = new NodeInfoDbRecord
+                    var queryEntity = new NodeInfoDbRecord
                     {
                         SessionId = testInfo.SessionId,
                         CurrentOperation = OperationType.Complete,
@@ -133,7 +132,7 @@ public class TimescaleDbSink : IReportingSink
 
                     var fields = Field.Parse<NodeInfoDbRecord>(e => e.CurrentOperation);
                
-                    await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, entity, fields: fields, transaction: transaction);
+                    await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, queryEntity, fields: fields, transaction: transaction);
                 
                     transaction.Commit();
                 }
