@@ -3,6 +3,7 @@
 public static class ColumnNames
 {
     public const string Time = "time";
+    public const string ScenarioTimestamp = "scenario_timestamp";
     public const string SessionId = "session_id";
     public const string CurrentOperation = "current_operation";
     

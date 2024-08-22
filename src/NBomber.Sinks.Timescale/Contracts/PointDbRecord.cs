@@ -8,6 +8,7 @@ using NBomber.Contracts.Stats;
 public class PointDbRecord
 {
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }
+    [Column(ColumnNames.ScenarioTimestamp)] public TimeSpan ScenarioTimestamp { get; set; }
     [Column(ColumnNames.SessionId)] public string SessionId { get; set; }
     [Column(ColumnNames.CurrentOperation)] public OperationType CurrentOperation { get; set; }
     
@@ -59,7 +60,7 @@ public class PointDbRecord
     [Column(ColumnNames.FailDataP99)] public long FailDataP99 { get; set; }
     [Column(ColumnNames.FailStatusCodes)] public string FailStatusCodes { get; set; }
     [Column(ColumnNames.FailLatencyCount)] public string FailLatencyCount { get; set; }
-    
+ 
     [Column(ColumnNames.SimulationValue)] public int SimulationValue { get; set; }
 }
 

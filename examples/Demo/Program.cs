@@ -43,8 +43,9 @@ public class TimescaleDBReportingExample
             .LoadInfraConfig("infra-config.json")
             .WithReportingInterval(TimeSpan.FromSeconds(5))
             .WithReportingSinks(_timescaleDbSink)
-            .WithTestSuite("reporting")
+            .WithTestSuite("reporting test")
             .WithTestName("timescale_db_demo")
+            .WithSessionId("dasfvxcz214141-wfva1-219")
             .Run();
     }
 }

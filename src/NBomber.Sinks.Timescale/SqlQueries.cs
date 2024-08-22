@@ -13,6 +13,7 @@ public static class SqlQueries
         CREATE TABLE IF NOT EXISTS ""{StepStatsTable}""
         (
             ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
+            ""{ColumnNames.ScenarioTimestamp}"" TIME WITHOUT TIME ZONE NOT NULL,
             ""{ColumnNames.SessionId}"" TEXT NOT NULL,
             ""{ColumnNames.CurrentOperation}"" TEXT,            
             

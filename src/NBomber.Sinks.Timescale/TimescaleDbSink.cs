@@ -170,6 +170,7 @@ public class TimescaleDbSink : IReportingSink
             .Select(step => new PointDbRecord
             {
                 Time = currentTime,
+                ScenarioTimestamp = scnStats.Duration,
                 SessionId = testInfo.SessionId,
                 CurrentOperation = nodeInfo.CurrentOperation,
                 Scenario = scnStats.ScenarioName,
