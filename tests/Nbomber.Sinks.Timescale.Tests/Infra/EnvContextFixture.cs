@@ -8,7 +8,7 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
     public class EnvContextFixture : IDisposable
     {
         private readonly ICompositeService _docker;
-        private static readonly bool UseDocker = true;
+        private static readonly bool UseDocker = false;
         private readonly Func<TimescaleDbSink> _createSincFn;
 
         public TestHelper TestHelper {  get; private set; }
