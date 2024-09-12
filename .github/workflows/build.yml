@@ -18,6 +18,9 @@ jobs:
       with:
         dotnet-version: 8.x.x    
     
+    - name: Docker Compose Up
+      run: docker compose --project-directory ./tests/Nbomber.Sinks.Timescale.Tests up
+
     - name: Build
       run: dotnet build NBomber.Sinks.Timescale.sln
 
