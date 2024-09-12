@@ -26,3 +26,6 @@ jobs:
 
     - name: Test
       run: dotnet test tests/Nbomber.Sinks.Timescale.Tests/Nbomber.Sinks.Timescale.Tests.csproj --configuration Release --verbosity detailed
+
+    - name: Docker Compose Down
+      run: docker compose --project-directory ./tests/Nbomber.Sinks.Timescale.Tests down
