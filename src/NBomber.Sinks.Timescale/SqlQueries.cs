@@ -8,7 +8,7 @@ public static class SqlQueries
 {
     public const string StepStatsTable = "nb_step_stats";
     public const string SessionsTable = "nb_sessions";
-    
+    public const string DbSchemaVersion = "nb_sink_schema_version";
     public static string CreateStepStatsTable => $@"
         CREATE TABLE IF NOT EXISTS ""{StepStatsTable}""
         (
@@ -80,6 +80,13 @@ public static class SqlQueries
             ""{ColumnNames.TestSuite}"" TEXT,
             ""{ColumnNames.TestName}"" TEXT,
             ""{ColumnNames.NodeInfo}"" JSONB            
+        );    
+       ";
+
+    public static string CreateDbSchemaVersion => $@"
+        CREATE TABLE IF NOT EXISTS ""{DbSchemaVersion}""
+        (            
+            ""{ColumnNames.Version}"" INT PRIMARY KEY         
         );    
        ";
 }

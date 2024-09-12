@@ -12,12 +12,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    
+    - uses: actions/checkout@v3   
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
       with:
         dotnet-version: 8.x.x    
     
+    - name: Docker Compose Up
+      run: docker compose --project-directory ./tests/Nbomber.Sinks.Timescale.Tests up -d
+
     - name: Build
       run: dotnet build NBomber.Sinks.Timescale.sln
+
+    - name: Test
+      run: dotnet test tests/Nbomber.Sinks.Timescale.Tests/Nbomber.Sinks.Timescale.Tests.csproj --configuration Release --verbosity normal
+
+    - name: Docker Compose Down
+      run: docker compose --project-directory ./tests/Nbomber.Sinks.Timescale.Tests down

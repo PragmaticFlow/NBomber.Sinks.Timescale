@@ -60,4 +60,6 @@ public static class ColumnNames
     public const string FailLatencyCount = "fail_latency_count";
     
     public const string SimulationValue = "simulation_value";
+
+    public const string Version = "Version";
 }

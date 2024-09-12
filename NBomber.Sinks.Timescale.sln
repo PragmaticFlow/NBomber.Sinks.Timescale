@@ -1,5 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35013.160
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution items", "solution items", "{997E99F2-8640-4A0B-918B-D000900B5F79}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yml = docker-compose.yml
@@ -7,13 +10,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution items", "solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{7CF08F85-D062-49F6-9A69-72F7DB9369AB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimescaleBenchmark", "benchmarks\TimescaleBenchmark\TimescaleBenchmark.csproj", "{323B3F41-09BF-4B77-BE47-15AF73A1BCA1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimescaleBenchmark", "benchmarks\TimescaleBenchmark\TimescaleBenchmark.csproj", "{323B3F41-09BF-4B77-BE47-15AF73A1BCA1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{83B64449-B0C6-4C1E-BF2E-D9641C33F1ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "examples\Demo\Demo.csproj", "{2A175FF0-F464-46FC-BBDD-37CC720B212C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo", "examples\Demo\Demo.csproj", "{2A175FF0-F464-46FC-BBDD-37CC720B212C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBomber.Sinks.Timescale", "src\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj", "{9225A528-D8A6-4EDB-9C71-228F4F0B58E2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBomber.Sinks.Timescale", "src\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj", "{9225A528-D8A6-4EDB-9C71-228F4F0B58E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nbomber.Sinks.Timescale.Tests", "tests\Nbomber.Sinks.Timescale.Tests\Nbomber.Sinks.Timescale.Tests.csproj", "{2034EFD1-9463-4292-9DE2-C5DA9610B1BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,9 +38,19 @@ Global
 		{9225A528-D8A6-4EDB-9C71-228F4F0B58E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9225A528-D8A6-4EDB-9C71-228F4F0B58E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9225A528-D8A6-4EDB-9C71-228F4F0B58E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2034EFD1-9463-4292-9DE2-C5DA9610B1BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2034EFD1-9463-4292-9DE2-C5DA9610B1BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2034EFD1-9463-4292-9DE2-C5DA9610B1BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2034EFD1-9463-4292-9DE2-C5DA9610B1BC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{323B3F41-09BF-4B77-BE47-15AF73A1BCA1} = {7CF08F85-D062-49F6-9A69-72F7DB9369AB}
 		{2A175FF0-F464-46FC-BBDD-37CC720B212C} = {83B64449-B0C6-4C1E-BF2E-D9641C33F1ED}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {776A101B-4C02-4D9A-A63C-4D50065DC601}
 	EndGlobalSection
 EndGlobal
