@@ -25,7 +25,7 @@ public class TimescaleDBReportingExample
 
         connection.ExecuteNonQuery(CleanDbSql);
         
-        connection.ExecuteNonQuery(SqlQueries.CreateStepStatsTable + SqlQueries.CreateSessionsTable);
+        connection.ExecuteNonQuery(SqlQueries.CreateStepStatsTable + SqlQueries.CreateSessionsTable + SqlQueries.CreateDbSchemaVersion);
         
         var writeScenario = new WriteScenario().Create(connectionString);
         var readScenario = new ReadScenario().Create(connectionString, DateTime.UtcNow, sessionId: "0");

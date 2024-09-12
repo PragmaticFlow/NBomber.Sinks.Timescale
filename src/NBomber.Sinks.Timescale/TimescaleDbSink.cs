@@ -60,13 +60,11 @@ public class TimescaleDbSink : IReportingSink
         GlobalConfiguration
             .Setup()
             .UsePostgreSql();
-        
+
         await _mainConnection.OpenAsync();
         
-        await _mainConnection.ExecuteNonQueryAsync(
-            SqlQueries.CreateStepStatsTable
-            + SqlQueries.CreateSessionsTable
-        );
+        var migration = new DbMigrations(_connectionString, _logger);
+        await migration.Run();  
     }
 
     public async Task Start()

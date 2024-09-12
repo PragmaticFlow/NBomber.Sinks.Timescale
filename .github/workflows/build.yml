@@ -12,8 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    
+    - uses: actions/checkout@v3   
     - name: Setup .NET
       uses: actions/setup-dotnet@v2
       with:
@@ -21,3 +20,6 @@ jobs:
     
     - name: Build
       run: dotnet build NBomber.Sinks.Timescale.sln
+
+    - name: Test
+      run: dotnet test tests/Nbomber.Sinks.Timescale.Tests/Nbomber.Sinks.Timescale.Tests.csproj --configuration Release --verbosity quiet

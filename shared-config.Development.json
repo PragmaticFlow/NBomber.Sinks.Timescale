@@ -1,0 +1,7 @@
+{
+	"TimescaleDbSink": {
+		"ConnectionString": "Host=localhost;Port=5432;Database=metricsdb;Username=timescaledb;Password=timescaledb;Pooling=true;Maximum Pool Size=300;"
+	},
+
+	"WebApiHostUrl": "http://localhost:5265"
+}
