@@ -25,7 +25,7 @@ jobs:
       run: dotnet build NBomber.Sinks.Timescale.sln
 
     - name: Test
-      run: dotnet test tests/Nbomber.Sinks.Timescale.Tests/Nbomber.Sinks.Timescale.Tests.csproj --configuration Release --verbosity detailed
+      run: dotnet test tests/Nbomber.Sinks.Timescale.Tests/Nbomber.Sinks.Timescale.Tests.csproj --configuration Release --verbosity normal
 
     - name: Docker Compose Down
       run: docker compose --project-directory ./tests/Nbomber.Sinks.Timescale.Tests down
