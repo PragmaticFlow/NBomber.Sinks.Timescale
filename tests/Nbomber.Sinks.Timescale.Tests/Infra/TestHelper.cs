@@ -59,5 +59,21 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
                 return -1;
             }
         }
+
+        public async Task<int> GetDataCount(string tableName)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+
+            try
+            {
+                var result = await connection.ExecuteScalarAsync<int>($@"SELECT COUNT(*) FROM {tableName};");
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return -1;
+            }
+        }
     }
 }
