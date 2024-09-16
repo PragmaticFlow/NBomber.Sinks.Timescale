@@ -63,7 +63,6 @@ namespace Nbomber.Sinks.Timescale.Tests
             Assert.Equal(DbMigrations.SinkSchemaVersion, dbSchemaVersion);
         }
 
-
         [Fact]
         public async Task When_Scenario_Completed_DataBase_IsFull()
         {
