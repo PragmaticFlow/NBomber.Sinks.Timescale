@@ -65,7 +65,7 @@ namespace Nbomber.Sinks.Timescale.Tests
 
 
         [Fact]
-        public async Task DataBase_IsFull_After_Scenario_Completed()
+        public async Task When_Scenario_Completed_DataBase_IsFull()
         {
             await fixture.TestHelper.DeleteTables();
 
