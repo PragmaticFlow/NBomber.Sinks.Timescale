@@ -24,6 +24,7 @@ public class TimescaleDbSink : IReportingSink
     private IBaseContext _context;
     private NpgsqlConnection _mainConnection;
     private string _connectionString = "";
+    private bool _dbError = false;
     
     public string SinkName => "NBomber.Sinks.TimescaleDb";
 
@@ -83,8 +84,31 @@ public class TimescaleDbSink : IReportingSink
                 TestName = testInfo.TestName,
                 NodeInfo = Json.serialize(nodeInfo)
             };
-            
-            await _mainConnection.BinaryBulkInsertAsync(SqlQueries.SessionsTable, new [] { record });
+
+            var text = @$"INSERT INTO {SqlQueries.SessionsTable} 
+                        (""{ColumnNames.Time}"",
+                        ""{ColumnNames.SessionId}"",
+                        ""{ColumnNames.CurrentOperation}"",
+                        ""{ColumnNames.TestSuite}"",
+                        ""{ColumnNames.TestName}"",
+                        ""{ColumnNames.NodeInfo}"")
+                        VALUES 
+                        ('{record.Time}',
+                        '{record.SessionId}',
+                        '{record.CurrentOperation}',
+                        '{record.TestSuite}',
+                        '{record.TestName}',
+                        '{record.NodeInfo}'::jsonb)";
+            try
+            {
+                await _mainConnection.ExecuteNonQueryAsync(text);
+            }
+            catch (Exception ex) 
+            {
+                _dbError = true;
+                _logger.Error(ex, ex.Message);
+                throw ex;
+            }
         }
     }
 
@@ -102,7 +126,7 @@ public class TimescaleDbSink : IReportingSink
 
     private async Task SaveScenarioStats(ScenarioStats[] stats, bool isFinal = false)
     {
-        if (_mainConnection != null)
+        if (_mainConnection != null && !_dbError)
         {
             var currentTime = DateTime.UtcNow;
             
