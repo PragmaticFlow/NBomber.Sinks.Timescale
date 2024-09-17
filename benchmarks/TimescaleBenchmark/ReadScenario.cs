@@ -58,6 +58,7 @@ public class ReadScenario
                 .Select(i => new PointDbRecord
                 { 
                     Time = startTime.AddSeconds(-5 * i),
+                    ScenarioTimestamp = TimeSpan.Zero,
                     Step = fakePoint.Step,
                     Scenario = fakePoint.Scenario,
                     

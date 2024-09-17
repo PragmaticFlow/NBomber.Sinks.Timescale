@@ -22,13 +22,18 @@ public class WriteScenario
             {
                 await using var connection = new NpgsqlConnection(connectionString);
             
-                var curTime = DateTime.UtcNow;
+                var curTime = DateTime.UtcNow; 
             
                 fakePoint.Time = curTime;
+                fakePoint.ScenarioTimestamp = TimeSpan.Zero;
                 fakePoint.SessionId = ctx.ScenarioInfo.InstanceNumber.ToString();
                 fakePoint.CurrentOperation = NBomber.Contracts.Stats.OperationType.Bombing;
-
-                await connection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, Enumerable.Repeat(fakePoint, 5));
+                try
+                {
+                    await connection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, Enumerable.Repeat(fakePoint, 5));
+                }
+                catch (Exception ex) 
+                { }
                 
                 return Response.Ok();
             });
