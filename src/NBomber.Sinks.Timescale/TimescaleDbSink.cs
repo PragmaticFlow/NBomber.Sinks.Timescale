@@ -68,7 +68,7 @@ public class TimescaleDbSink : IReportingSink
         await migration.Run();  
     }
 
-    public async Task Start()
+    public async Task Start(SessionStartInfo sessionInfo)
     {
         if (_mainConnection != null)
         {
@@ -82,6 +82,7 @@ public class TimescaleDbSink : IReportingSink
                 CurrentOperation = OperationType.Bombing,
                 TestSuite = testInfo.TestSuite,
                 TestName = testInfo.TestName,
+                Metadata = Json.serialize(sessionInfo),
                 NodeInfo = Json.serialize(nodeInfo)
             };
 
@@ -91,6 +92,7 @@ public class TimescaleDbSink : IReportingSink
                         ""{ColumnNames.CurrentOperation}"",
                         ""{ColumnNames.TestSuite}"",
                         ""{ColumnNames.TestName}"",
+                        ""{ColumnNames.Metadata}"",
                         ""{ColumnNames.NodeInfo}"")
                         VALUES 
                         ('{record.Time}',
@@ -98,6 +100,7 @@ public class TimescaleDbSink : IReportingSink
                         '{record.CurrentOperation}',
                         '{record.TestSuite}',
                         '{record.TestName}',
+                        '{record.Metadata}'::jsonb,
                         '{record.NodeInfo}'::jsonb)";
             try
             {
@@ -164,7 +167,7 @@ public class TimescaleDbSink : IReportingSink
 
     private ScenarioStats AddGlobalInfoStep(ScenarioStats scnStats)
     {
-        var globalStepInfo = new StepStats("global information", scnStats.Ok, scnStats.Fail);
+        var globalStepInfo = new StepStats("global information", scnStats.Ok, scnStats.Fail, 0);
         scnStats.StepStats = scnStats.StepStats.Append(globalStepInfo).ToArray();
 
         return scnStats;
@@ -197,6 +200,7 @@ public class TimescaleDbSink : IReportingSink
                 CurrentOperation = nodeInfo.CurrentOperation,
                 Scenario = scnStats.ScenarioName,
                 Step = step.StepName,
+                SortIndex = step.SortIndex,
 
                 AllReqCount = step.Ok.Request.Count + step.Fail.Request.Count,
                 AllDataAll = step.Ok.DataTransfer.AllBytes + step.Fail.DataTransfer.AllBytes,

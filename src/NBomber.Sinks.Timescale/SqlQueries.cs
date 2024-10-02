@@ -18,7 +18,8 @@ public static class SqlQueries
             ""{ColumnNames.CurrentOperation}"" TEXT,            
             
             ""{ColumnNames.Scenario}"" TEXT,
-            ""{ColumnNames.Step}"" TEXT,            
+            ""{ColumnNames.Step}"" TEXT, 
+            ""{ColumnNames.SortIndex}"" INT,
             
             ""{ColumnNames.AllReqCount}"" INT,
             ""{ColumnNames.AllDataAll}"" BIGINT,
@@ -79,6 +80,7 @@ public static class SqlQueries
             ""{ColumnNames.CurrentOperation}"" TEXT, 
             ""{ColumnNames.TestSuite}"" TEXT,
             ""{ColumnNames.TestName}"" TEXT,
+            ""{ColumnNames.Metadata}"" JSONB,
             ""{ColumnNames.NodeInfo}"" JSONB            
         );    
        ";

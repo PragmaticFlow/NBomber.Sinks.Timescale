@@ -6,6 +6,7 @@ public static class ColumnNames
     public const string ScenarioTimestamp = "scenario_timestamp";
     public const string SessionId = "session_id";
     public const string CurrentOperation = "current_operation";
+    public const string Metadata = "metadata";
     
     public const string NodeInfo = "node_info";
     public const string TestSuite = "test_suite";
@@ -13,7 +14,9 @@ public static class ColumnNames
     
     public const string Scenario = "scenario";
     public const string Step = "step";
-    
+    public const string SortIndex = "sort_index";
+
+
     public const string AllReqCount = "all_req_count";
     public const string AllDataAll = "all_data_all";
     
