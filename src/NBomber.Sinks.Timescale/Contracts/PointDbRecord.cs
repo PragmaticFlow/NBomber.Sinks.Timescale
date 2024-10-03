@@ -15,6 +15,7 @@ public class PointDbRecord
 
     [Column(ColumnNames.Scenario)] public string Scenario { get; set; }
     [Column(ColumnNames.Step)] public string Step { get; set; }
+    [Column(ColumnNames.SortIndex)] public int SortIndex { get; set; }
     
     [Column(ColumnNames.AllReqCount)] public int AllReqCount { get; set; }
     [Column(ColumnNames.AllDataAll)] public long AllDataAll { get; set; }
@@ -71,5 +72,6 @@ public class NodeInfoDbRecord
     [Column(ColumnNames.CurrentOperation)] public OperationType CurrentOperation { get; set; }
     [Column(ColumnNames.TestSuite)] public string TestSuite { get; set; }
     [Column(ColumnNames.TestName)] public string TestName { get; set; }
+    [Column(ColumnNames.Metadata)] public string Metadata{ get; set; }
     [Column(ColumnNames.NodeInfo)] public string NodeInfo { get; set; }
 }
