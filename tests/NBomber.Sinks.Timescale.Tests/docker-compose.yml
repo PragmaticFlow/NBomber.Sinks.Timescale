@@ -1,13 +1,13 @@
 ﻿services:
 
   timescaledb:
-    image: timescale/timescaledb:2.14.2-pg16    
+    image: timescale/timescaledb:2.14.2-pg16
     command: postgres -c 'max_connections=500'
     restart: always
     environment:
       POSTGRES_DB: metricsdb
       POSTGRES_USER: timescaledb
-      POSTGRES_PASSWORD: timescaledb    
+      POSTGRES_PASSWORD: timescaledb
     ports:
       - 5432:5432
     volumes:
@@ -17,8 +17,8 @@
       interval: 5s
       timeout: 10s
       retries: 5
-      start_period: 5s      
-        
+      start_period: 5s
+  
   pgadmin:
     image: dpage/pgadmin4
     restart: always
@@ -31,7 +31,7 @@
       - pgadmin-data:/var/lib/pgadmin
     depends_on:
       - timescaledb
-        
+
 volumes:
   metrics-data:
     driver: local

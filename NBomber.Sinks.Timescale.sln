@@ -18,7 +18,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Demo", "examples\Demo\Demo.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NBomber.Sinks.Timescale", "src\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj", "{9225A528-D8A6-4EDB-9C71-228F4F0B58E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nbomber.Sinks.Timescale.Tests", "tests\Nbomber.Sinks.Timescale.Tests\Nbomber.Sinks.Timescale.Tests.csproj", "{2034EFD1-9463-4292-9DE2-C5DA9610B1BC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NBomber.Sinks.Timescale.Tests", "tests\NBomber.Sinks.Timescale.Tests\NBomber.Sinks.Timescale.Tests.csproj", "{2034EFD1-9463-4292-9DE2-C5DA9610B1BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

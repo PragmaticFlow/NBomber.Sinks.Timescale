@@ -1,6 +1,13 @@
-﻿namespace NBomber.Sinks.Timescale.Contracts;
+﻿namespace NBomber.Sinks.Timescale.DAL;
 
-public static class ColumnNames
+internal static class TableNames
+{
+    public const string StepStatsTable = "nb_step_stats";
+    public const string SessionsTable = "nb_sessions";
+    public const string SchemaVersionTable = "nb_sink_schema_version";
+}
+
+internal static class ColumnNames
 {
     public const string Time = "time";
     public const string ScenarioTimestamp = "scenario_timestamp";
@@ -64,5 +71,5 @@ public static class ColumnNames
     
     public const string SimulationValue = "simulation_value";
 
-    public const string Version = "Version";
+    public const string Version = "version";
 }

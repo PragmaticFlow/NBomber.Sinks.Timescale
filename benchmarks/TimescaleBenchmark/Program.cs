@@ -2,15 +2,15 @@
 using Npgsql;
 using RepoDb;
 using NBomber.CSharp;
-using NBomber.Sinks.Timescale;
+using NBomber.Sinks.Timescale.DAL;
 
 new TimescaleDBReportingExample().Run();
 
 public class TimescaleDBReportingExample
 {
      private const string CleanDbSql = $"""
-         DROP TABLE IF EXISTS {SqlQueries.StepStatsTable};
-         DROP TABLE IF EXISTS {SqlQueries.SessionsTable};
+         DROP TABLE IF EXISTS {TableNames.StepStatsTable};
+         DROP TABLE IF EXISTS {TableNames.SessionsTable};
      """;
     
     public void Run()

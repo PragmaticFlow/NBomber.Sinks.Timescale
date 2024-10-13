@@ -4,8 +4,8 @@ using Npgsql;
 using RepoDb;
 using NBomber.Contracts;
 using NBomber.CSharp;
-using NBomber.Sinks.Timescale;
 using NBomber.Sinks.Timescale.Contracts;
+using NBomber.Sinks.Timescale.DAL;
 
 namespace TimescaleBenchmark;
 
@@ -25,7 +25,7 @@ public class ReadScenario
 
                 var st = endTime - TimeSpan.FromMinutes(10);
                 
-                var dataStepStats = connection.QueryAsync<PointDbRecord>(SqlQueries.StepStatsTable,
+                var dataStepStats = connection.QueryAsync<PointDbRecord>(TableNames.StepStatsTable,
                     p => p.SessionId == sessionId 
                     && p.Time <= endTime
                     && p.Time >= st);
@@ -119,7 +119,7 @@ public class ReadScenario
             
             await using var connection = new NpgsqlConnection(connectionString);
             
-            var insert = connection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, fakePoints);
+            var insert = connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, fakePoints);
 
             await insert;
         });

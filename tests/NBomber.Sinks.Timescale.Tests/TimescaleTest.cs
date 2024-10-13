@@ -1,8 +1,8 @@
-using Nbomber.Sinks.Timescale.Tests.Infra;
-using NBomber.Sinks.Timescale;
 using NBomber.CSharp;
+using NBomber.Sinks.Timescale.DAL;
+using NBomber.Sinks.Timescale.Tests.Infra;
 
-namespace Nbomber.Sinks.Timescale.Tests
+namespace NBomber.Sinks.Timescale.Tests
 {
     public class TimescaleTest(EnvContextFixture fixture) : IClassFixture<EnvContextFixture>
     {
@@ -25,7 +25,7 @@ namespace Nbomber.Sinks.Timescale.Tests
                 return Response.Ok(statusCode: "201", message: "hey");
             })
             .WithoutWarmUp()
-            .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(10)));
+            .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(1)));
 
             Assert.Throws<Exception>(() =>
             {
@@ -51,7 +51,7 @@ namespace Nbomber.Sinks.Timescale.Tests
                 return Response.Ok(statusCode: "201", message: "hey");
             })
             .WithoutWarmUp()
-            .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(10)));
+            .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(1)));
 
             NBomberRunner
                 .RegisterScenarios(scenario)
@@ -64,7 +64,7 @@ namespace Nbomber.Sinks.Timescale.Tests
         }
 
         [Fact]
-        public async Task When_Scenario_Completed_DataBase_IsFull()
+        public async Task When_Scenario_Finished_The_DataBase_Should_Contain_Data()
         {
             await fixture.TestHelper.DeleteTables();
 
@@ -78,17 +78,17 @@ namespace Nbomber.Sinks.Timescale.Tests
                 return Response.Ok(statusCode: "201", message: "hey");
             })
             .WithoutWarmUp()
-            .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(10)));
+            .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(1)));
 
             NBomberRunner
                 .RegisterScenarios(scenario)
                 .WithReportingSinks(fixture.CreateTimescaleDbSinkInstance())
                 .Run();
 
-            var sessionTableCount = await fixture.TestHelper.GetDataCount(SqlQueries.SessionsTable);
-            var stepStatsTableCount = await fixture.TestHelper.GetDataCount(SqlQueries.StepStatsTable);
+            var sessionTableCount = await fixture.TestHelper.GetDataCount(TableNames.SessionsTable);
+            var stepStatsTableCount = await fixture.TestHelper.GetDataCount(TableNames.StepStatsTable);
 
-            Assert.True(sessionTableCount > 0);
+            Assert.True(sessionTableCount == 1);
             Assert.True(stepStatsTableCount > 0);
         }
     }

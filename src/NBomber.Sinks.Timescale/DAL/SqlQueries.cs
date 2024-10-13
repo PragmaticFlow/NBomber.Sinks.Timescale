@@ -1,16 +1,9 @@
-#pragma warning disable CS1591
+namespace NBomber.Sinks.Timescale.DAL;
 
-using NBomber.Sinks.Timescale.Contracts;
-
-namespace NBomber.Sinks.Timescale;
-
-public static class SqlQueries
+internal static class SqlQueries
 {
-    public const string StepStatsTable = "nb_step_stats";
-    public const string SessionsTable = "nb_sessions";
-    public const string DbSchemaVersion = "nb_sink_schema_version";
     public static string CreateStepStatsTable => $@"
-        CREATE TABLE IF NOT EXISTS ""{StepStatsTable}""
+        CREATE TABLE IF NOT EXISTS ""{TableNames.StepStatsTable}""
         (
             ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
             ""{ColumnNames.ScenarioTimestamp}"" TIME WITHOUT TIME ZONE NOT NULL,
@@ -68,12 +61,12 @@ public static class SqlQueries
             
             ""{ColumnNames.SimulationValue}"" INT
         );
-        SELECT create_hypertable('{StepStatsTable}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
-        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {StepStatsTable} ({ColumnNames.SessionId});
+        SELECT create_hypertable('{TableNames.StepStatsTable}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {TableNames.StepStatsTable} ({ColumnNames.SessionId});
    ";
     
     public static string CreateSessionsTable => $@"
-        CREATE TABLE IF NOT EXISTS ""{SessionsTable}""
+        CREATE TABLE IF NOT EXISTS ""{TableNames.SessionsTable}""
         (            
             ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
             ""{ColumnNames.SessionId}"" TEXT PRIMARY KEY,
@@ -86,9 +79,9 @@ public static class SqlQueries
        ";
 
     public static string CreateDbSchemaVersion => $@"
-        CREATE TABLE IF NOT EXISTS ""{DbSchemaVersion}""
+        CREATE TABLE IF NOT EXISTS ""{TableNames.SchemaVersionTable}""
         (            
             ""{ColumnNames.Version}"" INT PRIMARY KEY         
-        );    
+        );
        ";
 }

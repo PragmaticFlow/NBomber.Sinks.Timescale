@@ -1,4 +1,6 @@
 {
+	"StartDockerCompose": false,
+	
 	"DBSettings": {
 		"ConnectionString": "Host=localhost;Port=5432;Database=metricsdb;Username=timescaledb;Password=timescaledb;Pooling=true;Maximum Pool Size=300;"
 	}

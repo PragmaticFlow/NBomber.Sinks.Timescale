@@ -5,8 +5,8 @@ using Npgsql;
 using RepoDb;
 using NBomber.Contracts;
 using NBomber.CSharp;
-using NBomber.Sinks.Timescale;
 using NBomber.Sinks.Timescale.Contracts;
+using NBomber.Sinks.Timescale.DAL;
 
 namespace TimescaleBenchmark;
 
@@ -30,11 +30,13 @@ public class WriteScenario
                 fakePoint.CurrentOperation = NBomber.Contracts.Stats.OperationType.Bombing;
                 try
                 {
-                    await connection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, Enumerable.Repeat(fakePoint, 5));
+                    await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, Enumerable.Repeat(fakePoint, 5));
                 }
-                catch (Exception ex) 
-                { }
-                
+                catch
+                {
+                    // ignored
+                }
+
                 return Response.Ok();
             });
 

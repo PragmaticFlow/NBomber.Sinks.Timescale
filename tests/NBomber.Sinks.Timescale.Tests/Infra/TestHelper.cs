@@ -1,22 +1,14 @@
-﻿using NBomber.Sinks.Timescale.Contracts;
-using NBomber.Sinks.Timescale;
+﻿using NBomber.Sinks.Timescale.DAL;
 using Npgsql;
 using RepoDb;
 
-namespace Nbomber.Sinks.Timescale.Tests.Infra
+namespace NBomber.Sinks.Timescale.Tests.Infra
 {
-    public class TestHelper
+    public class TestHelper(string connectionString)
     {
-        private readonly string _connectionString;
-
-        public TestHelper(string connectionString)
-        {
-            _connectionString = connectionString;
-        }
-
         public async Task CreateTables()
         {
-            using var connection = new NpgsqlConnection(_connectionString);
+            await using var connection = new NpgsqlConnection(connectionString);
 
             await connection.ExecuteNonQueryAsync(
                         SqlQueries.CreateStepStatsTable
@@ -26,35 +18,35 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
 
         public async Task SetDbSchemaVersion(int version)
         {
-            using var connection = new NpgsqlConnection(_connectionString);
+            await using var connection = new NpgsqlConnection(connectionString);
 
             await connection.ExecuteNonQueryAsync($@"
-                            INSERT INTO {SqlQueries.DbSchemaVersion} (""{ColumnNames.Version}"")
+                            INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
                             VALUES ({version})
                             ;");
         }
 
         public async Task DeleteTables()
         {
-            using var connection = new NpgsqlConnection(_connectionString);
+            await using var connection = new NpgsqlConnection(connectionString);
 
             await connection.ExecuteNonQueryAsync
-                (@$"DROP TABLE IF EXISTS {SqlQueries.DbSchemaVersion}, 
-                                         {SqlQueries.SessionsTable};
-                    DROP TABLE IF EXISTS {SqlQueries.StepStatsTable};");
+                (@$"DROP TABLE IF EXISTS {TableNames.SchemaVersionTable}, 
+                                         {TableNames.SessionsTable};
+                    DROP TABLE IF EXISTS {TableNames.StepStatsTable};");
         }
 
         public async Task<int> GetDBSchemaVersion()
         {
-            using var connection = new NpgsqlConnection(_connectionString);
+            await using var connection = new NpgsqlConnection(connectionString);
          
             try
             {
-                var result = await connection.ExecuteQueryAsync<int>($@"SELECT ""{ColumnNames.Version}"" FROM {SqlQueries.DbSchemaVersion};");
+                var result = await connection.ExecuteQueryAsync<int>($@"SELECT ""{ColumnNames.Version}"" FROM {TableNames.SchemaVersionTable};");
                 var currentDbVersion = result.FirstOrDefault();
                 return currentDbVersion;
             }
-            catch (Exception ex)
+            catch
             {
                 return -1;
             }
@@ -62,7 +54,7 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
 
         public async Task<int> GetDataCount(string tableName)
         {
-            using var connection = new NpgsqlConnection(_connectionString);
+            await using var connection = new NpgsqlConnection(connectionString);
 
             try
             {
@@ -70,7 +62,7 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
 
                 return result;
             }
-            catch (Exception ex)
+            catch
             {
                 return -1;
             }

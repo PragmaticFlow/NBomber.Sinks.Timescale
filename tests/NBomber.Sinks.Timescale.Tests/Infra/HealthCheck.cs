@@ -1,7 +1,7 @@
 ﻿using Npgsql;
 using RepoDb;
 
-namespace Nbomber.Sinks.Timescale.Tests.Infra
+namespace NBomber.Sinks.Timescale.Tests.Infra
 {
     static class HealthCheck
     {
@@ -17,7 +17,7 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
         {
             try
             {
-                using var connection = new NpgsqlConnection(connectionString);
+                await using var connection = new NpgsqlConnection(connectionString);
 
                 return await connection.ExecuteScalarAsync<bool>("SELECT EXISTS (SELECT FROM pg_tables)");
             }

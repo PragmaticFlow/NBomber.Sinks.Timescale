@@ -29,6 +29,12 @@
     <ItemGroup>
         <None Include="../../LICENSE" Pack="true" Visible="false" PackagePath="" />
         <None Include="../../assets/nbomber_icon.png" Pack="true" Visible="false" PackagePath="" />
-    </ItemGroup>    
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="NBomber.Sinks.Timescale.Tests" />
+        <InternalsVisibleTo Include="TimescaleBenchmark" />
+        <InternalsVisibleTo Include="NBomber.Metrics.WebAPI" />
+    </ItemGroup>
 
 </Project>

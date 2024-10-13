@@ -1,30 +1,24 @@
-﻿using Ductus.FluentDocker.Services;
+﻿#pragma warning disable CS8602, CS8618
+using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Builders;
 using System.Text.Json;
-using NBomber.Sinks.Timescale;
 
-namespace Nbomber.Sinks.Timescale.Tests.Infra
+namespace NBomber.Sinks.Timescale.Tests.Infra
 {
     public class EnvContextFixture : IDisposable
     {
+        private readonly Config? _config;
         private readonly ICompositeService _docker;
-        private static readonly bool UseDocker = false;
-        private readonly Func<TimescaleDbSink> _createSincFn;
 
         public TestHelper TestHelper {  get; private set; }
-        public TimescaleDbSink TimescaleDbSink { get; private set; }
 
         public EnvContextFixture()
         {
-            var config = JsonSerializer.Deserialize<Config>(
-                json: File.ReadAllText("config.Development.json")
-            );
+            _config = JsonSerializer.Deserialize<Config>(json: File.ReadAllText("config.json"));
 
-            _createSincFn = () => new TimescaleDbSink(config.DBSettings.ConnectionString);
-
-            if (UseDocker)
+            if (_config.StartDockerCompose)
             {
-                var dockerCompose = Path.Combine(Directory.GetCurrentDirectory(), "docker-compose.yml");
+                var dockerCompose = "docker-compose.yml";
 
                 _docker = new Builder()
                     .UseContainer()
@@ -36,18 +30,19 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
                 _docker.Start();
             }
 
-            HealthCheck.WaitUntilReady(config.DBSettings.ConnectionString).Wait();
+            HealthCheck.WaitUntilReady(_config.DBSettings.ConnectionString).Wait();
 
-            TestHelper = new TestHelper(config.DBSettings.ConnectionString);
+            TestHelper = new TestHelper(_config.DBSettings.ConnectionString);
         }
 
         public TimescaleDbSink CreateTimescaleDbSinkInstance()
         {
-            return _createSincFn();
+            return new TimescaleDbSink(new TimescaleDbSinkConfig(_config.DBSettings.ConnectionString));
         }
+        
         public void Dispose()
         {
-            if (UseDocker)
+            if (_config.StartDockerCompose)
             {
                 _docker.Stop();
                 _docker.Dispose();
@@ -57,6 +52,7 @@ namespace Nbomber.Sinks.Timescale.Tests.Infra
 
     public class Config
     {
+        public bool StartDockerCompose { get; set; }
         public DBSettings DBSettings { get; set; }
     }
 

@@ -6,10 +6,11 @@ using Microsoft.Extensions.Configuration;
 using Npgsql;
 using RepoDb;
 using ILogger = Serilog.ILogger;
+
 using NBomber.Contracts;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
-using System.Data;
+using NBomber.Sinks.Timescale.DAL;
 
 namespace NBomber.Sinks.Timescale;
 
@@ -23,17 +24,17 @@ public class TimescaleDbSink : IReportingSink
     private ILogger _logger;
     private IBaseContext _context;
     private NpgsqlConnection _mainConnection;
-    private string _connectionString = "";
+    private TimescaleDbSinkConfig _config = new("");
     private bool _dbError = false;
     
     public string SinkName => "NBomber.Sinks.TimescaleDb";
 
     public TimescaleDbSink() { }
 
-    public TimescaleDbSink(string connectionString)
+    public TimescaleDbSink(TimescaleDbSinkConfig config)
     {
-        _connectionString = connectionString;
-        _mainConnection = new NpgsqlConnection(connectionString);
+        _config = config;
+        _mainConnection = new NpgsqlConnection(_config.ConnectionString);
     }
     
     public async Task Init(IBaseContext context, IConfiguration infraConfig)
@@ -44,8 +45,8 @@ public class TimescaleDbSink : IReportingSink
         var config = infraConfig?.GetSection("TimescaleDbSink").Get<TimescaleDbSinkConfig>();
         if (config != null)
         {
-            _connectionString = config.ConnectionString;
-            _mainConnection = new NpgsqlConnection(_connectionString);
+            _config = config;
+            _mainConnection = new NpgsqlConnection(_config.ConnectionString);
         }
         
         if (_mainConnection == null)
@@ -64,7 +65,7 @@ public class TimescaleDbSink : IReportingSink
 
         await _mainConnection.OpenAsync();
         
-        var migration = new DbMigrations(_connectionString, _logger);
+        var migration = new DbMigrations(_config.ConnectionString, _logger);
         await migration.Run();  
     }
 
@@ -86,7 +87,7 @@ public class TimescaleDbSink : IReportingSink
                 NodeInfo = Json.serialize(nodeInfo)
             };
 
-            var text = @$"INSERT INTO {SqlQueries.SessionsTable} 
+            var text = @$"INSERT INTO {TableNames.SessionsTable} 
                         (""{ColumnNames.Time}"",
                         ""{ColumnNames.SessionId}"",
                         ""{ColumnNames.CurrentOperation}"",
@@ -110,7 +111,7 @@ public class TimescaleDbSink : IReportingSink
             {
                 _dbError = true;
                 _logger.Error(ex, ex.Message);
-                throw ex;
+                throw;
             }
         }
     }
@@ -139,13 +140,13 @@ public class TimescaleDbSink : IReportingSink
             
             if (!isFinal)
             {
-                await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points);
+                await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
             }
             else
             {
                 using (var transaction = _mainConnection.EnsureOpen().BeginTransaction())
                 {
-                    await _mainConnection.BinaryBulkInsertAsync(SqlQueries.StepStatsTable, points, transaction: (NpgsqlTransaction) transaction);
+                    await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points, transaction: (NpgsqlTransaction) transaction);
 
                     var testInfo = _context.TestInfo;
 
@@ -157,7 +158,7 @@ public class TimescaleDbSink : IReportingSink
 
                     var fields = Field.Parse<NodeInfoDbRecord>(e => e.CurrentOperation);
                
-                    await _mainConnection.UpdateAsync(SqlQueries.SessionsTable, queryEntity, fields: fields, transaction: transaction);
+                    await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
                 
                     transaction.Commit();
                 }
