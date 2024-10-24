@@ -65,7 +65,7 @@ public class TimescaleDbSink : IReportingSink
 
         await _mainConnection.OpenAsync();
         
-        var migration = new DbMigrations(_config.ConnectionString, _logger);
+        var migration = new DbMigrations(_mainConnection, _logger);
         await migration.Run();  
     }
 

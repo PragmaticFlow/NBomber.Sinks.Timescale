@@ -4,7 +4,7 @@ using ILogger = Serilog.ILogger;
 
 namespace NBomber.Sinks.Timescale.DAL;
 
-internal class DbMigrations(string connectionString, ILogger logger)
+internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
 {
     public const int SinkSchemaVersion = 0;
 
@@ -31,7 +31,6 @@ internal class DbMigrations(string connectionString, ILogger logger)
     {
         try
         {
-            using var connection = new NpgsqlConnection(connectionString);
             var result = await connection.ExecuteQueryAsync<int>($@"SELECT ""{ColumnNames.Version}"" FROM {TableNames.SchemaVersionTable};");
             var currentDbVersion = result.FirstOrDefault();
             return currentDbVersion;
@@ -45,8 +44,6 @@ internal class DbMigrations(string connectionString, ILogger logger)
 
     private async Task ApplyMigration(int version)
     {
-        await using var connection = new NpgsqlConnection(connectionString);
-
         switch (version) 
         {
             case 0:
