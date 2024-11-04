@@ -45,7 +45,6 @@ public class TimescaleDBReportingExample
             .WithReportingSinks(_timescaleDbSink)
             .WithTestSuite("reporting test")
             .WithTestName("timescale_db_demo")
-            .WithSessionId("dasfvxcz214141-wfva1-221")
             .Run();
     }
 }
