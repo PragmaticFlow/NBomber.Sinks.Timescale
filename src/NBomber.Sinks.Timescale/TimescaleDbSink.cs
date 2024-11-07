@@ -87,25 +87,9 @@ public class TimescaleDbSink : IReportingSink
                 NodeInfo = Json.serialize(nodeInfo)
             };
 
-            var text = @$"INSERT INTO {TableNames.SessionsTable} 
-                        (""{ColumnNames.Time}"",
-                        ""{ColumnNames.SessionId}"",
-                        ""{ColumnNames.CurrentOperation}"",
-                        ""{ColumnNames.TestSuite}"",
-                        ""{ColumnNames.TestName}"",
-                        ""{ColumnNames.Metadata}"",
-                        ""{ColumnNames.NodeInfo}"")
-                        VALUES 
-                        ('{record.Time}',
-                        '{record.SessionId}',
-                        '{record.CurrentOperation}',
-                        '{record.TestSuite}',
-                        '{record.TestName}',
-                        '{record.Metadata}'::jsonb,
-                        '{record.NodeInfo}'::jsonb)";
             try
             {
-                await _mainConnection.ExecuteNonQueryAsync(text);
+                var res = await _mainConnection.InsertAsync(tableName: TableNames.SessionsTable, record);
             }
             catch (Exception ex) 
             {
