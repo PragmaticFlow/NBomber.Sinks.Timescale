@@ -72,4 +72,5 @@ internal static class ColumnNames
     public const string SimulationValue = "simulation_value";
 
     public const string Version = "version";
+    public const string LastUpdatedTime = "last_updated_time";
 }

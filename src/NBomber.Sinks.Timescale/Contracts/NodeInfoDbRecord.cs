@@ -9,6 +9,7 @@ namespace NBomber.Sinks.Timescale.Contracts;
 internal class NodeInfoDbRecord
 {
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }
+    [Column(ColumnNames.LastUpdatedTime)] public DateTime LastUpdatedTime { get; set; }
     [Column(ColumnNames.SessionId)] public string SessionId { get; set; }
     [Column(ColumnNames.CurrentOperation)] public OperationType CurrentOperation { get; set; }
     [Column(ColumnNames.TestSuite)] public string TestSuite { get; set; }

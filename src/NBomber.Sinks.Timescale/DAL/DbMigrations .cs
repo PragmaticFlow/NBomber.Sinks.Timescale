@@ -6,7 +6,7 @@ namespace NBomber.Sinks.Timescale.DAL;
 
 internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
 {
-    public const int SinkSchemaVersion = 0;
+    public const int SinkSchemaVersion = 1;
 
     public async Task Run()
     {
@@ -60,21 +60,21 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                 logger.Debug("Created initial tables");
                 break;
 
-            //case 1:
-            //    await connection.ExecuteNonQueryAsync($@"
-            //            ALTER TABLE {SqlQueries.StepStatsTable}
-            //            ADD COLUMN IF NOT EXISTS {ColumnNames.TestCulomn} TEXT
-            //            ;
+            case 1:
+                await connection.ExecuteNonQueryAsync($@"
+                        ALTER TABLE {TableNames.SessionsTable}
+                        ADD COLUMN IF NOT EXISTS {ColumnNames.LastUpdatedTime} TIMESTAMPTZ
+                        ;
                         
-            //            WITH updated AS (
-            //                UPDATE {SqlQueries.DbSchemaVersion}
-            //                SET ""{ColumnNames.Version}"" = {version}
-            //                RETURNING *
-            //            )
-            //            INSERT INTO {SqlQueries.DbSchemaVersion} (""{ColumnNames.Version}"")
-            //            SELECT 1 
-            //            WHERE NOT EXISTS (SELECT * FROM updated);");
-            //    break;
+                        WITH updated AS (
+                            UPDATE {TableNames.SchemaVersionTable}
+                            SET ""{ColumnNames.Version}"" = {version}
+                            RETURNING *
+                        )
+                        INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
+                        SELECT 1 
+                        WHERE NOT EXISTS (SELECT * FROM updated);");
+                break;
         }
     }
 }
