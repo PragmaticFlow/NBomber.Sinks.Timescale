@@ -6,7 +6,7 @@ using RepoDb.Attributes.Parameter.Npgsql;
 
 namespace NBomber.Sinks.Timescale.Contracts;
 
-internal class NodeInfoDbRecord
+internal class SessionInfoDbRecord
 {
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }
     [Column(ColumnNames.LastUpdatedTime)] public DateTime LastUpdatedTime { get; set; }

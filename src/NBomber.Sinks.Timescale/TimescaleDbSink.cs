@@ -77,7 +77,7 @@ public class TimescaleDbSink : IReportingSink
             var testInfo = _context.TestInfo;
             var startTime = DateTime.UtcNow;
 
-            var record = new NodeInfoDbRecord
+            var record = new SessionInfoDbRecord
             {
                 Time = startTime,
                 LastUpdatedTime = startTime,
@@ -136,14 +136,14 @@ public class TimescaleDbSink : IReportingSink
 
                     var testInfo = _context.TestInfo;
 
-                    var queryEntity = new NodeInfoDbRecord
+                    var queryEntity = new SessionInfoDbRecord
                     {
                         SessionId = testInfo.SessionId,
                         CurrentOperation = OperationType.Complete,
                         LastUpdatedTime = currentTime,
                     };
 
-                    var fields = Field.Parse<NodeInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
+                    var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
                
                     await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
                 

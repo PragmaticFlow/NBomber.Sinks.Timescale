@@ -15,12 +15,12 @@
         <PackageTags>load-testing, performance-testing, integration-testing, fsharp, timescale</PackageTags>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <Description>NBomber sink that writes stats data to TimescaleDB</Description>
+        <Description>NBomber sink that writes metrics data to TimescaleDB</Description>
         <Title>NBomber.Sinks.Timescale</Title>        
     </PropertyGroup>
 
     <ItemGroup>      
-      <PackageReference Include="NBomber.Contracts" Version="5.6.1" />
+      <PackageReference Include="NBomber.Contracts" Version="5.7.0-beta.9" />
       <PackageReference Include="Npgsql" Version="8.0.4" />
       <PackageReference Include="RepoDb.PostgreSql" Version="1.13.1" />
       <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.13.1" />
