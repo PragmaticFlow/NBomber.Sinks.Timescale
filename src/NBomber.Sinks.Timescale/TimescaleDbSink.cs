@@ -119,9 +119,10 @@ public class TimescaleDbSink : IReportingSink
         if (_mainConnection != null && !_dbError)
         {
             var currentTime = DateTime.UtcNow;
+            var currentOperation = isFinal ? OperationType.Complete : OperationType.Bombing;
             
             var points = stats.Select(AddGlobalInfoStep)
-                .SelectMany(step => MapToPoint(step, currentTime))
+                .SelectMany(step => MapToPoint(step, currentTime, currentOperation))
                 .ToArray();
             
             if (!isFinal)
@@ -139,7 +140,7 @@ public class TimescaleDbSink : IReportingSink
                     var queryEntity = new SessionInfoDbRecord
                     {
                         SessionId = testInfo.SessionId,
-                        CurrentOperation = OperationType.Complete,
+                        CurrentOperation = currentOperation,
                         LastUpdatedTime = currentTime,
                     };
 
@@ -161,16 +162,15 @@ public class TimescaleDbSink : IReportingSink
         return scnStats;
     }
 
-    private PointDbRecord[] MapToPoint(ScenarioStats scnStats, DateTime currentTime)
+    private PointDbRecord[] MapToPoint(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
     {
-        var nodeInfo = _context.GetNodeInfo();
         var testInfo = _context.TestInfo;
         
         return scnStats.StepStats
             .Select(step =>
             {
                 // clear status code message for Bombing
-                if (nodeInfo.CurrentOperation != OperationType.Complete)
+                if (currentOperation != OperationType.Complete)
                 {
                     foreach (var status in step.Ok.StatusCodes)
                         status.Message = "";
@@ -185,7 +185,7 @@ public class TimescaleDbSink : IReportingSink
                 Time = currentTime,
                 ScenarioTimestamp = scnStats.Duration,
                 SessionId = testInfo.SessionId,
-                CurrentOperation = nodeInfo.CurrentOperation,
+                CurrentOperation = currentOperation,
                 Scenario = scnStats.ScenarioName,
                 Step = step.StepName,
                 SortIndex = step.SortIndex,
