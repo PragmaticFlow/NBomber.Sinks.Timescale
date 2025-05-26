@@ -63,17 +63,16 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
             case 1:
                 await connection.ExecuteNonQueryAsync($@"
                         ALTER TABLE {TableNames.SessionsTable}
-                        ADD COLUMN IF NOT EXISTS {ColumnNames.LastUpdatedTime} TIMESTAMPTZ
-                        ;
-                        
-                        WITH updated AS (
-                            UPDATE {TableNames.SchemaVersionTable}
-                            SET ""{ColumnNames.Version}"" = {version}
-                            RETURNING *
-                        )
-                        INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
-                        SELECT 1 
-                        WHERE NOT EXISTS (SELECT * FROM updated);");
+                        ADD COLUMN IF NOT EXISTS {ColumnNames.LastUpdatedTime} TIMESTAMPTZ;
+                ");
+
+                await connection.ExecuteNonQueryAsync(SqlQueries.CreateDbSchemaVersion);
+                await connection.ExecuteNonQueryAsync($@"
+                        UPDATE {TableNames.SchemaVersionTable}
+                        SET ""{ColumnNames.Version}"" = {version}
+                        WHERE ""{ColumnNames.Version}"" < 1;
+                ");
+                logger.Debug($"Migrated to version {version}");
                 break;
             
             case 2:
@@ -84,6 +83,7 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                         SET ""{ColumnNames.Version}"" = {version}
                         WHERE ""{ColumnNames.Version}"" < 2;
                 ");
+                logger.Debug($"Migrated to version {version}");
                 break;
         }
     }
