@@ -84,4 +84,21 @@ internal static class SqlQueries
             ""{ColumnNames.Version}"" INT PRIMARY KEY         
         );
        ";
+    
+    public static string CreateMetricsTable => $@"
+        CREATE TABLE IF NOT EXISTS ""{TableNames.MetricsTable}""
+        (            
+            ""{ColumnNames.Time}"" TIMESTAMPTZ NOT NULL,
+            ""{ColumnNames.ScenarioTimestamp}"" TIME WITHOUT TIME ZONE NOT NULL,
+            ""{ColumnNames.SessionId}"" TEXT NOT NULL,
+            ""{ColumnNames.CurrentOperation}"" TEXT, 
+            ""{ColumnNames.Scenario}"" TEXT,           
+            ""{ColumnNames.Metric}"" TEXT,            
+            ""{ColumnNames.MetricType}"" TEXT,
+            ""{ColumnNames.UnitOfMeasure}"" TEXT,
+            ""{ColumnNames.Value}"" DOUBLE PRECISION
+        );
+        SELECT create_hypertable('{TableNames.MetricsTable}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {TableNames.MetricsTable} ({ColumnNames.SessionId})
+       ";
 }

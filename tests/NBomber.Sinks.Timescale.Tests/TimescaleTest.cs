@@ -87,9 +87,11 @@ namespace NBomber.Sinks.Timescale.Tests
 
             var sessionTableCount = await fixture.TestHelper.GetDataCount(TableNames.SessionsTable);
             var stepStatsTableCount = await fixture.TestHelper.GetDataCount(TableNames.StepStatsTable);
+            var metricsTableCount = await fixture.TestHelper.GetDataCount(TableNames.MetricsTable);
 
             Assert.True(sessionTableCount == 1);
             Assert.True(stepStatsTableCount > 0);
+            Assert.True(metricsTableCount > 0);
         }
     }
 } 

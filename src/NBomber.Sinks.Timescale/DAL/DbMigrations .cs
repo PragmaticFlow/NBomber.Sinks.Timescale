@@ -6,7 +6,7 @@ namespace NBomber.Sinks.Timescale.DAL;
 
 internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
 {
-    public const int SinkSchemaVersion = 1;
+    public const int SinkSchemaVersion = 2;
 
     public async Task Run()
     {
@@ -74,6 +74,16 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                         INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
                         SELECT 1 
                         WHERE NOT EXISTS (SELECT * FROM updated);");
+                break;
+            
+            case 2:
+                await connection.ExecuteNonQueryAsync(SqlQueries.CreateMetricsTable);
+                
+                await connection.ExecuteNonQueryAsync($@"
+                        UPDATE {TableNames.SchemaVersionTable}
+                        SET ""{ColumnNames.Version}"" = {version}
+                        WHERE ""{ColumnNames.Version}"" < 2;
+                ");
                 break;
         }
     }

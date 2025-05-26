@@ -8,6 +8,7 @@ using RepoDb;
 using ILogger = Serilog.ILogger;
 
 using NBomber.Contracts;
+using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
 using NBomber.Sinks.Timescale.DAL;
@@ -54,7 +55,9 @@ public class TimescaleDbSink : IReportingSink
             _logger.Error(
                 "Reporting Sink {0} has problems with initialization. The problem could be related to invalid config structure.",
                 SinkName);
-
+            
+            _dbError = true;
+            
             throw new Exception(
                 $"Reporting Sink {SinkName} has problems with initialization. The problem could be related to invalid config structure.");
         }
@@ -102,56 +105,68 @@ public class TimescaleDbSink : IReportingSink
         }
     }
 
-    public Task SaveRealtimeStats(ScenarioStats[] stats) => SaveScenarioStats(stats);
+    public async Task SaveRealtimeStats(ScenarioStats[] stats)
+    {
+        if (!_dbError)
+        {
+            var currentTime = DateTime.UtcNow;
+            
+            var points = stats.Select(AddGlobalInfoStep)
+                .SelectMany(step => MapToPoint(step, currentTime, OperationType.Bombing))
+                .ToArray();
+            
+            await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
+        }
+    }
 
-    public Task SaveFinalStats(NodeStats stats) => SaveScenarioStats(stats.ScenarioStats, isFinal: true);
+    public async Task SaveRealtimeMetrics(MetricStats metrics)
+    {
+        if (!_dbError)
+        {
+            var points = MapMetrics(metrics, DateTime.UtcNow, OperationType.Bombing);
+            await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
+        }
+    }
+
+    public async Task SaveFinalStats(NodeStats stats)
+    {
+        if (!_dbError)
+        {
+            var currentTime = DateTime.UtcNow;
+            var operation = OperationType.Complete;
+            var testInfo = _context.TestInfo;
+            
+            var metricsPoints = MapMetrics(stats.Metrics, currentTime, operation);
+            
+            var statsPoints = stats.ScenarioStats.Select(AddGlobalInfoStep)
+                .SelectMany(step => MapToPoint(step, currentTime, operation))
+                .ToArray();
+
+            var queryEntity = new SessionInfoDbRecord
+            {
+                SessionId = testInfo.SessionId,
+                CurrentOperation = operation,
+                LastUpdatedTime = currentTime,
+            };
+
+            using var transaction = _mainConnection.EnsureOpen().BeginTransaction();
+            
+            await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, statsPoints, transaction: (NpgsqlTransaction) transaction);
+            await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metricsPoints, transaction: (NpgsqlTransaction) transaction);
+
+            var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
+            await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
+                
+            transaction.Commit();
+        }
+    }
 
     public Task Stop() => Task.CompletedTask;
 
     public void Dispose()
     {
-        _mainConnection.Close();
-        _mainConnection.Dispose();
-    }
-
-    private async Task SaveScenarioStats(ScenarioStats[] stats, bool isFinal = false)
-    {
-        if (_mainConnection != null && !_dbError)
-        {
-            var currentTime = DateTime.UtcNow;
-            var currentOperation = isFinal ? OperationType.Complete : OperationType.Bombing;
-            
-            var points = stats.Select(AddGlobalInfoStep)
-                .SelectMany(step => MapToPoint(step, currentTime, currentOperation))
-                .ToArray();
-            
-            if (!isFinal)
-            {
-                await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
-            }
-            else
-            {
-                using (var transaction = _mainConnection.EnsureOpen().BeginTransaction())
-                {
-                    await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points, transaction: (NpgsqlTransaction) transaction);
-
-                    var testInfo = _context.TestInfo;
-
-                    var queryEntity = new SessionInfoDbRecord
-                    {
-                        SessionId = testInfo.SessionId,
-                        CurrentOperation = currentOperation,
-                        LastUpdatedTime = currentTime,
-                    };
-
-                    var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
-               
-                    await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
-                
-                    transaction.Commit();
-                }
-            }
-        }
+        _mainConnection?.Close();
+        _mainConnection?.Dispose();
     }
 
     private ScenarioStats AddGlobalInfoStep(ScenarioStats scnStats)
@@ -162,6 +177,39 @@ public class TimescaleDbSink : IReportingSink
         return scnStats;
     }
 
+    private MetricDbRecord[] MapMetrics(MetricStats stats, DateTime currentTime, OperationType operationType)
+    {
+        var testInfo = _context.TestInfo;
+        
+        var counters = stats.Counters.Select(x => new MetricDbRecord
+        {
+            Time = currentTime,
+            ScenarioTimestamp = stats.Duration,
+            SessionId = testInfo.SessionId,
+            CurrentOperation = operationType,
+            Scenario = x.ScenarioName,
+            Metric = x.MetricName,
+            MetricType = "counter",
+            UnitOfMeasure = x.UnitOfMeasure,
+            Value = x.Value
+        });
+        
+        var gauges = stats.Gauges.Select(x => new MetricDbRecord
+        {
+            Time = currentTime,
+            ScenarioTimestamp = stats.Duration,
+            SessionId = testInfo.SessionId,
+            CurrentOperation = operationType,
+            Scenario = x.ScenarioName,
+            Metric = x.MetricName,
+            MetricType = "gauge",
+            UnitOfMeasure = x.UnitOfMeasure,
+            Value = x.Value
+        });
+        
+        return counters.Concat(gauges).ToArray();
+    }
+    
     private PointDbRecord[] MapToPoint(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
     {
         var testInfo = _context.TestInfo;

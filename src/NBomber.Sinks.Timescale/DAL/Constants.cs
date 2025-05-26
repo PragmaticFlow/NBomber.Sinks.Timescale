@@ -3,6 +3,7 @@
 internal static class TableNames
 {
     public const string StepStatsTable = "nb_step_stats";
+    public const string MetricsTable = "nb_metreics";
     public const string SessionsTable = "nb_sessions";
     public const string SchemaVersionTable = "nb_sink_schema_version";
 }
@@ -23,7 +24,11 @@ internal static class ColumnNames
     public const string Step = "step";
     public const string SortIndex = "sort_index";
 
-
+    public const string Metric = "metric";
+    public const string MetricType = "metric_type";
+    public const string UnitOfMeasure = "unit_of_measure";
+    public const string Value = "value";
+    
     public const string AllReqCount = "all_req_count";
     public const string AllDataAll = "all_data_all";
     
