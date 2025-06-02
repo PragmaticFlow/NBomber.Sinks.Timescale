@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Npgsql;
 using RepoDb;
 using ILogger = Serilog.ILogger;
-
 using NBomber.Contracts;
 using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
@@ -26,7 +25,6 @@ public class TimescaleDbSink : IReportingSink
     private IBaseContext _context;
     private NpgsqlConnection _mainConnection;
     private TimescaleDbSinkConfig _config = new("");
-    private bool _dbError = false;
     
     public string SinkName => "NBomber.Sinks.TimescaleDb";
 
@@ -56,8 +54,6 @@ public class TimescaleDbSink : IReportingSink
                 "Reporting Sink {0} has problems with initialization. The problem could be related to invalid config structure.",
                 SinkName);
             
-            _dbError = true;
-            
             throw new Exception(
                 $"Reporting Sink {SinkName} has problems with initialization. The problem could be related to invalid config structure.");
         }
@@ -80,85 +76,78 @@ public class TimescaleDbSink : IReportingSink
             var testInfo = _context.TestInfo;
             var startTime = DateTime.UtcNow;
 
-            var record = new SessionInfoDbRecord
+            if (!nodeInfo.NodeType.IsAgent)
             {
-                Time = startTime,
-                LastUpdatedTime = startTime,
-                SessionId = testInfo.SessionId,
-                CurrentOperation = OperationType.Bombing,
-                TestSuite = testInfo.TestSuite,
-                TestName = testInfo.TestName,
-                Metadata = Json.serialize(sessionInfo),
-                NodeInfo = Json.serialize(nodeInfo)
-            };
+                var record = new SessionInfoDbRecord
+                {
+                    Time = startTime,
+                    LastUpdatedTime = startTime,
+                    SessionId = testInfo.SessionId,
+                    CurrentOperation = OperationType.Bombing,
+                    TestSuite = testInfo.TestSuite,
+                    TestName = testInfo.TestName,
+                    Metadata = Json.serialize(sessionInfo),
+                    NodeInfo = Json.serialize(nodeInfo)
+                };
 
-            try
-            {
-                var res = await _mainConnection.InsertAsync(tableName: TableNames.SessionsTable, record);
-            }
-            catch (Exception ex) 
-            {
-                _dbError = true;
-                _logger.Error(ex, ex.Message);
-                throw;
+                try
+                {
+                    var res = await _mainConnection.InsertAsync(tableName: TableNames.SessionsTable, record);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, ex.Message);
+                    throw;
+                }
             }
         }
     }
 
     public async Task SaveRealtimeStats(ScenarioStats[] stats)
     {
-        if (!_dbError)
-        {
-            var currentTime = DateTime.UtcNow;
+        var currentTime = DateTime.UtcNow;
             
-            var points = stats.Select(AddGlobalInfoStep)
-                .SelectMany(step => MapToPoint(step, currentTime, OperationType.Bombing))
-                .ToArray();
+        var points = stats.Select(AddGlobalInfoStep)
+            .SelectMany(step => MapToPoint(step, currentTime, OperationType.Bombing))
+            .ToArray();
             
-            await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
-        }
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
     }
 
     public async Task SaveRealtimeMetrics(MetricStats metrics)
     {
-        if (!_dbError)
-        {
-            var points = MapMetrics(metrics, DateTime.UtcNow, OperationType.Bombing);
-            await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
-        }
+        var points = MapMetrics(metrics, DateTime.UtcNow, OperationType.Bombing);
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
     public async Task SaveFinalStats(NodeStats stats)
     {
-        if (!_dbError)
+        var currentTime = DateTime.UtcNow;
+        var operation = OperationType.Complete;
+        var testInfo = _context.TestInfo;
+            
+        var metricsPoints = MapMetrics(stats.Metrics, currentTime, operation);
+            
+        var statsPoints = stats.ScenarioStats.Select(AddGlobalInfoStep)
+            .SelectMany(step => MapToPoint(step, currentTime, operation))
+            .ToArray();
+
+        var queryEntity = new SessionInfoDbRecord
         {
-            var currentTime = DateTime.UtcNow;
-            var operation = OperationType.Complete;
-            var testInfo = _context.TestInfo;
-            
-            var metricsPoints = MapMetrics(stats.Metrics, currentTime, operation);
-            
-            var statsPoints = stats.ScenarioStats.Select(AddGlobalInfoStep)
-                .SelectMany(step => MapToPoint(step, currentTime, operation))
-                .ToArray();
+            SessionId = testInfo.SessionId,
+            CurrentOperation = operation,
+            LastUpdatedTime = currentTime,
+        };
 
-            var queryEntity = new SessionInfoDbRecord
-            {
-                SessionId = testInfo.SessionId,
-                CurrentOperation = operation,
-                LastUpdatedTime = currentTime,
-            };
-
-            using var transaction = _mainConnection.EnsureOpen().BeginTransaction();
+        using var transaction = _mainConnection.EnsureOpen().BeginTransaction();
             
-            await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, statsPoints, transaction: (NpgsqlTransaction) transaction);
-            await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metricsPoints, transaction: (NpgsqlTransaction) transaction);
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, statsPoints, transaction: (NpgsqlTransaction) transaction);
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metricsPoints, transaction: (NpgsqlTransaction) transaction);
 
-            var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
-            await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
+        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
+        await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
                 
-            transaction.Commit();
-        }
+        transaction.Commit();
     }
 
     public Task Stop() => Task.CompletedTask;
