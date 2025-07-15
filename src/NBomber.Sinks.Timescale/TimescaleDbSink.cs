@@ -1,5 +1,3 @@
-#pragma warning disable CS1591
-
 using System.Text.Json;
 using FSharp.Json;
 using Microsoft.Extensions.Configuration;
@@ -14,11 +12,20 @@ using NBomber.Sinks.Timescale.DAL;
 
 namespace NBomber.Sinks.Timescale;
 
+/// <summary>
+/// Configuration class for the TimescaleDbSink.
+/// </summary>
 public class TimescaleDbSinkConfig(string connectionString)
 {
+    /// <summary>
+    /// Gets or sets the connection string for TimescaleDB.
+    /// </summary>
     public string ConnectionString { get; set; } = connectionString;
 }
 
+/// <summary>
+/// Reporting sink for NBomber that stores performance statistics and metrics in TimescaleDB.
+/// </summary>
 public class TimescaleDbSink : IReportingSink
 {
     private ILogger _logger;
@@ -26,16 +33,33 @@ public class TimescaleDbSink : IReportingSink
     private NpgsqlConnection _mainConnection;
     private TimescaleDbSinkConfig _config = new("");
     
+    /// <summary>
+    /// Gets the name of the sink.
+    /// </summary>
     public string SinkName => "NBomber.Sinks.TimescaleDb";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TimescaleDbSink"/> class with default configuration.
+    /// </summary>
     public TimescaleDbSink() { }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TimescaleDbSink"/> class using the specified configuration.
+    /// </summary>
+    /// <param name="config">The configuration object containing the TimescaleDB connection string.</param>
     public TimescaleDbSink(TimescaleDbSinkConfig config)
     {
         _config = config;
         _mainConnection = new NpgsqlConnection(_config.ConnectionString);
     }
     
+    /// <summary>
+    /// Initializes the sink with the NBomber context and configuration.
+    /// Also opens a connection to the TimescaleDB and runs database migrations.
+    /// </summary>
+    /// <param name="context">NBomber base context object.</param>
+    /// <param name="infraConfig">Infrastructure configuration section.</param>
+    /// <returns>A task representing the asynchronous initialization operation.</returns>
     public async Task Init(IBaseContext context, IConfiguration infraConfig)
     {
         _logger = context.Logger.ForContext<TimescaleDbSink>();
@@ -68,6 +92,11 @@ public class TimescaleDbSink : IReportingSink
         await migration.Run();  
     }
 
+    /// <summary>
+    /// Called at the beginning of a test session. Stores session metadata in TimescaleDB.
+    /// </summary>
+    /// <param name="sessionInfo">Information about the test session.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task Start(SessionStartInfo sessionInfo)
     {
         if (_mainConnection != null)
@@ -103,6 +132,11 @@ public class TimescaleDbSink : IReportingSink
         }
     }
 
+    /// <summary>
+    /// Saves real-time scenario statistics during the bombing phase of the test run.
+    /// </summary>
+    /// <param name="stats">An array of scenario statistics.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SaveRealtimeStats(ScenarioStats[] stats)
     {
         var currentTime = DateTime.UtcNow;
@@ -114,12 +148,23 @@ public class TimescaleDbSink : IReportingSink
         await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
     }
 
+    /// <summary>
+    /// Saves real-time metric statistics (counters and gauges) during the bombing phase.
+    /// </summary>
+    /// <param name="metrics">The metrics data to store.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SaveRealtimeMetrics(MetricStats metrics)
     {
         var points = MapMetrics(metrics, DateTime.UtcNow, OperationType.Bombing);
         await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
+    /// <summary>
+    /// Saves final aggregated statistics and metrics after the test run has completed.
+    /// Updates the session record to mark the test as completed.
+    /// </summary>
+    /// <param name="stats">The final node statistics.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SaveFinalStats(NodeStats stats)
     {
         var currentTime = DateTime.UtcNow;
@@ -150,8 +195,14 @@ public class TimescaleDbSink : IReportingSink
         transaction.Commit();
     }
 
+    /// <summary>
+    /// Called when the test session ends
+    /// </summary>
     public Task Stop() => Task.CompletedTask;
 
+    /// <summary>
+    /// Disposes the sink by closing and releasing the TimescaleDB connection.
+    /// </summary>
     public void Dispose()
     {
         _mainConnection?.Close();
