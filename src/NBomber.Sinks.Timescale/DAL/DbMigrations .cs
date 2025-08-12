@@ -6,11 +6,11 @@ namespace NBomber.Sinks.Timescale.DAL;
 
 internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
 {
-    public const int SinkSchemaVersion = 2;
+    public const int SinkSchemaVersion = 3;
 
     public async Task Run()
     {
-        var currentDbVersion = await GetCurrendDbVersion();
+        var currentDbVersion = await GetCurrentDbVersion();
 
         if (currentDbVersion > SinkSchemaVersion)
         {
@@ -26,7 +26,7 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
         }
     }
 
-    private async Task<int> GetCurrendDbVersion()
+    private async Task<int> GetCurrentDbVersion()
     {
         try
         {
