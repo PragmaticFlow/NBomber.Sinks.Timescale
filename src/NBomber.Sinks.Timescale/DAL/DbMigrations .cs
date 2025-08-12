@@ -84,6 +84,17 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                 ");
                 logger.Debug($"Migrated to version {version}");
                 break;
+
+            case 3:
+                await connection.ExecuteNonQueryAsync(SqlQueries.AddSimulationNameColumn);
+
+                await connection.ExecuteNonQueryAsync($@"
+                        UPDATE {TableNames.SchemaVersionTable}
+                        SET ""{ColumnNames.Version}"" = {version}
+                        WHERE ""{ColumnNames.Version}"" < 3;
+                ");
+                logger.Debug($"Migrated to version {version}");
+                break;
         }
     }
 }
