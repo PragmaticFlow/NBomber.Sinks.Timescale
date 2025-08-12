@@ -60,5 +60,6 @@ internal class PointDbRecord
     [Column(ColumnNames.FailStatusCodes)] public string FailStatusCodes { get; set; }
     [Column(ColumnNames.FailLatencyCount)] public string FailLatencyCount { get; set; }
  
+    [Column(ColumnNames.SimulationName)] public string SimulationName { get; set; }
     [Column(ColumnNames.SimulationValue)] public int SimulationValue { get; set; }
 }

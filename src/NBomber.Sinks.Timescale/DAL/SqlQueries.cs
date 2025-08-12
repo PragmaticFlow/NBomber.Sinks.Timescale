@@ -101,4 +101,9 @@ internal static class SqlQueries
         SELECT create_hypertable('{TableNames.MetricsTable}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
         CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {TableNames.MetricsTable} ({ColumnNames.SessionId})
        ";
+
+    public static string AddSimulationNameColumnToMetricsTable => $@"
+        ALTER TABLE ""{TableNames.StepStatsTable}""
+        ADD {ColumnNames.SimulationName} TEXT;
+       ";
 }

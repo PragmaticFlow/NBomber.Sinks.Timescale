@@ -322,6 +322,7 @@ public class TimescaleDbSink : IReportingSink
                 FailStatusCodes = JsonSerializer.Serialize(step.Fail.StatusCodes),
                 FailLatencyCount = JsonSerializer.Serialize(step.Fail.Latency.LatencyCount),
 
+                SimulationName = scnStats.LoadSimulationStats.SimulationName,
                 SimulationValue = scnStats.LoadSimulationStats.Value
             })
             .ToArray();

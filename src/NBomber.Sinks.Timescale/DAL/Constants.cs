@@ -73,7 +73,8 @@ internal static class ColumnNames
     public const string FailDataP99 = "fail_data_p99";
     public const string FailStatusCodes = "fail_status_codes";
     public const string FailLatencyCount = "fail_latency_count";
-    
+
+    public const string SimulationName = "simulation_name";
     public const string SimulationValue = "simulation_value";
 
     public const string Version = "version";
