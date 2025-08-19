@@ -37,6 +37,7 @@
         <InternalsVisibleTo Include="NBomber.Sinks.Timescale.Tests" />
         <InternalsVisibleTo Include="TimescaleBenchmark" />
         <InternalsVisibleTo Include="NBomber.Studio.WebAPI" />
+        <InternalsVisibleTo Include="NBomber.Studio.Tests" />
     </ItemGroup>
 
 </Project>
