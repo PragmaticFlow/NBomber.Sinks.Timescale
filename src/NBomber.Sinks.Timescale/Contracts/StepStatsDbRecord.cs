@@ -1,10 +1,11 @@
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System.ComponentModel.DataAnnotations.Schema;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.DAL;
 
 namespace NBomber.Sinks.Timescale.Contracts;
 
-internal class PointDbRecord
+public class StepStatsDbRecord
 {
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }
     [Column(ColumnNames.ScenarioTimestamp)] public TimeSpan ScenarioTimestamp { get; set; }

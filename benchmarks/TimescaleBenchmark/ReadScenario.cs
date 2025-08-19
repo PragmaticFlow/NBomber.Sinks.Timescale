@@ -16,7 +16,7 @@ public class ReadScenario
         return Scenario.Create("read_scenario", async ctx =>
         {
             var end = false;
-            var result = new List<PointDbRecord>();
+            var result = new List<StepStatsDbRecord>();
             var endTime = startTime;
             
             while (!end)
@@ -25,7 +25,7 @@ public class ReadScenario
 
                 var st = endTime - TimeSpan.FromMinutes(10);
                 
-                var dataStepStats = connection.QueryAsync<PointDbRecord>(TableNames.StepStatsTable,
+                var dataStepStats = connection.QueryAsync<StepStatsDbRecord>(TableNames.StepStatsTable,
                     p => p.SessionId == sessionId 
                     && p.Time <= endTime
                     && p.Time >= st);
@@ -50,12 +50,12 @@ public class ReadScenario
         .WithInit(async ctx =>
         {
             var faker = AutoFaker.Create();
-            var fakePoint = faker.Generate<PointDbRecord>();
+            var fakePoint = faker.Generate<StepStatsDbRecord>();
             var rnd = new Random();
             
             var fakePoints = Enumerable
                 .Range(0, 2160)
-                .Select(i => new PointDbRecord
+                .Select(i => new StepStatsDbRecord
                 { 
                     Time = startTime.AddSeconds(-5 * i),
                     ScenarioTimestamp = TimeSpan.Zero,

@@ -14,7 +14,7 @@ public class WriteScenario
 {
     public ScenarioProps Create(string connectionString)
     {
-        PointDbRecord fakePoint = new();
+        StepStatsDbRecord fakeStepPoint = new();
         
         return Scenario.Create("write_scenario", async ctx =>
         {
@@ -24,13 +24,13 @@ public class WriteScenario
             
                 var curTime = DateTime.UtcNow; 
             
-                fakePoint.Time = curTime;
-                fakePoint.ScenarioTimestamp = TimeSpan.Zero;
-                fakePoint.SessionId = ctx.ScenarioInfo.InstanceNumber.ToString();
-                fakePoint.CurrentOperation = NBomber.Contracts.Stats.OperationType.Bombing;
+                fakeStepPoint.Time = curTime;
+                fakeStepPoint.ScenarioTimestamp = TimeSpan.Zero;
+                fakeStepPoint.SessionId = ctx.ScenarioInfo.InstanceNumber.ToString();
+                fakeStepPoint.CurrentOperation = NBomber.Contracts.Stats.OperationType.Bombing;
                 try
                 {
-                    await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, Enumerable.Repeat(fakePoint, 5));
+                    await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, Enumerable.Repeat(fakeStepPoint, 5));
                 }
                 catch
                 {
@@ -52,12 +52,12 @@ public class WriteScenario
             
             var faker = AutoFaker.Create();
             
-            fakePoint = faker.Generate<PointDbRecord>();
+            fakeStepPoint = faker.Generate<StepStatsDbRecord>();
             
-            fakePoint.OkLatencyCount = JsonSerializer.Serialize(fakePoint.OkLatencyCount);
-            fakePoint.OkStatusCodes = JsonSerializer.Serialize(fakePoint.OkStatusCodes);
-            fakePoint.FailLatencyCount = JsonSerializer.Serialize(fakePoint.FailLatencyCount);
-            fakePoint.FailStatusCodes = JsonSerializer.Serialize(fakePoint.FailStatusCodes);
+            fakeStepPoint.OkLatencyCount = JsonSerializer.Serialize(fakeStepPoint.OkLatencyCount);
+            fakeStepPoint.OkStatusCodes = JsonSerializer.Serialize(fakeStepPoint.OkStatusCodes);
+            fakeStepPoint.FailLatencyCount = JsonSerializer.Serialize(fakeStepPoint.FailLatencyCount);
+            fakeStepPoint.FailStatusCodes = JsonSerializer.Serialize(fakeStepPoint.FailStatusCodes);
         })
         .WithWarmUpDuration(TimeSpan.FromSeconds(3))
         .WithLoadSimulations(

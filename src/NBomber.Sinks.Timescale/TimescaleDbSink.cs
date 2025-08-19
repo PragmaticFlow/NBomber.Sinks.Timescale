@@ -142,7 +142,7 @@ public class TimescaleDbSink : IReportingSink
         var currentTime = DateTime.UtcNow;
             
         var points = stats.Select(AddGlobalInfoStep)
-            .SelectMany(step => MapToPoint(step, currentTime, OperationType.Bombing))
+            .SelectMany(step => MapStepToDbRecord(step, currentTime, OperationType.Bombing))
             .ToArray();
             
         await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
@@ -155,7 +155,7 @@ public class TimescaleDbSink : IReportingSink
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SaveRealtimeMetrics(MetricStats metrics)
     {
-        var points = MapMetrics(metrics, DateTime.UtcNow, OperationType.Bombing);
+        var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, OperationType.Bombing);
         await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
@@ -171,10 +171,10 @@ public class TimescaleDbSink : IReportingSink
         var operation = OperationType.Complete;
         var testInfo = _context.TestInfo;
             
-        var metricsPoints = MapMetrics(stats.Metrics, currentTime, operation);
+        var metrics = MapMetricToDbRecord(stats.Metrics, currentTime, operation);
             
-        var statsPoints = stats.ScenarioStats.Select(AddGlobalInfoStep)
-            .SelectMany(step => MapToPoint(step, currentTime, operation))
+        var stepsStats = stats.ScenarioStats.Select(AddGlobalInfoStep)
+            .SelectMany(step => MapStepToDbRecord(step, currentTime, operation))
             .ToArray();
 
         var queryEntity = new SessionInfoDbRecord
@@ -186,8 +186,8 @@ public class TimescaleDbSink : IReportingSink
 
         using var transaction = _mainConnection.EnsureOpen().BeginTransaction();
             
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, statsPoints, transaction: (NpgsqlTransaction) transaction);
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metricsPoints, transaction: (NpgsqlTransaction) transaction);
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: (NpgsqlTransaction) transaction);
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: (NpgsqlTransaction) transaction);
 
         var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
         await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
@@ -217,7 +217,7 @@ public class TimescaleDbSink : IReportingSink
         return scnStats;
     }
 
-    private MetricDbRecord[] MapMetrics(MetricStats stats, DateTime currentTime, OperationType operationType)
+    private MetricDbRecord[] MapMetricToDbRecord(MetricStats stats, DateTime currentTime, OperationType operationType)
     {
         var testInfo = _context.TestInfo;
         
@@ -250,7 +250,7 @@ public class TimescaleDbSink : IReportingSink
         return counters.Concat(gauges).ToArray();
     }
     
-    private PointDbRecord[] MapToPoint(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
+    private StepStatsDbRecord[] MapStepToDbRecord(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
     {
         var testInfo = _context.TestInfo;
         
@@ -268,7 +268,7 @@ public class TimescaleDbSink : IReportingSink
                 }
                 return step;
             })
-            .Select(step => new PointDbRecord
+            .Select(step => new StepStatsDbRecord
             {
                 Time = currentTime,
                 ScenarioTimestamp = scnStats.Duration,
