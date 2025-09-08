@@ -9,6 +9,7 @@ using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
 using NBomber.Sinks.Timescale.DAL;
+using NBomber.Sinks.Timescale.Domain;
 
 namespace NBomber.Sinks.Timescale;
 
@@ -112,7 +113,7 @@ public class TimescaleDbSink : IReportingSink
                     Time = startTime,
                     LastUpdatedTime = startTime,
                     SessionId = testInfo.SessionId,
-                    CurrentOperation = OperationType.Bombing,
+                    CurrentOperation = TimescaleOperationType.Bombing,
                     TestSuite = testInfo.TestSuite,
                     TestName = testInfo.TestName,
                     Metadata = Json.serialize(sessionInfo),
@@ -142,7 +143,7 @@ public class TimescaleDbSink : IReportingSink
         var currentTime = DateTime.UtcNow;
             
         var points = stats.Select(AddGlobalInfoStep)
-            .SelectMany(step => MapStepToDbRecord(step, currentTime, OperationType.Bombing))
+            .SelectMany(step => MapStepToDbRecord(step, currentTime, TimescaleOperationType.Bombing))
             .ToArray();
             
         await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
@@ -155,7 +156,7 @@ public class TimescaleDbSink : IReportingSink
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task SaveRealtimeMetrics(MetricStats metrics)
     {
-        var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, OperationType.Bombing);
+        var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, TimescaleOperationType.Bombing);
         await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
@@ -168,7 +169,7 @@ public class TimescaleDbSink : IReportingSink
     public async Task SaveFinalStats(NodeStats stats)
     {
         var currentTime = DateTime.UtcNow;
-        var operation = OperationType.Complete;
+        var operation = TimescaleOperationType.Completed;
         var testInfo = _context.TestInfo;
             
         var metrics = MapMetricToDbRecord(stats.Metrics, currentTime, operation);
@@ -217,7 +218,7 @@ public class TimescaleDbSink : IReportingSink
         return scnStats;
     }
 
-    private MetricDbRecord[] MapMetricToDbRecord(MetricStats stats, DateTime currentTime, OperationType operationType)
+    private MetricDbRecord[] MapMetricToDbRecord(MetricStats stats, DateTime currentTime, TimescaleOperationType operationType)
     {
         var testInfo = _context.TestInfo;
         
@@ -250,7 +251,7 @@ public class TimescaleDbSink : IReportingSink
         return counters.Concat(gauges).ToArray();
     }
     
-    private StepStatsDbRecord[] MapStepToDbRecord(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
+    private StepStatsDbRecord[] MapStepToDbRecord(ScenarioStats scnStats, DateTime currentTime, TimescaleOperationType currentOperation)
     {
         var testInfo = _context.TestInfo;
         
@@ -258,7 +259,7 @@ public class TimescaleDbSink : IReportingSink
             .Select(step =>
             {
                 // clear status code message for Bombing
-                if (currentOperation != OperationType.Complete)
+                if (currentOperation != TimescaleOperationType.Completed)
                 {
                     foreach (var status in step.Ok.StatusCodes)
                         status.Message = "";

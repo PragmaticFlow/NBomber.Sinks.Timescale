@@ -7,6 +7,7 @@ using NBomber.Contracts;
 using NBomber.CSharp;
 using NBomber.Sinks.Timescale.Contracts;
 using NBomber.Sinks.Timescale.DAL;
+using NBomber.Sinks.Timescale.Domain;
 
 namespace TimescaleBenchmark;
 
@@ -27,7 +28,8 @@ public class WriteScenario
                 fakeStepPoint.Time = curTime;
                 fakeStepPoint.ScenarioTimestamp = TimeSpan.Zero;
                 fakeStepPoint.SessionId = ctx.ScenarioInfo.InstanceNumber.ToString();
-                fakeStepPoint.CurrentOperation = NBomber.Contracts.Stats.OperationType.Bombing;
+                
+                fakeStepPoint.CurrentOperation = TimescaleOperationType.Bombing;
                 try
                 {
                     await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, Enumerable.Repeat(fakeStepPoint, 5));

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.DAL;
+using NBomber.Sinks.Timescale.Domain;
 using NpgsqlTypes;
 using RepoDb.Attributes.Parameter.Npgsql;
 
@@ -11,7 +11,7 @@ internal class SessionInfoDbRecord
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }
     [Column(ColumnNames.LastUpdatedTime)] public DateTime LastUpdatedTime { get; set; }
     [Column(ColumnNames.SessionId)] public string SessionId { get; set; }
-    [Column(ColumnNames.CurrentOperation)] public OperationType CurrentOperation { get; set; }
+    [Column(ColumnNames.CurrentOperation)] public TimescaleOperationType CurrentOperation { get; set; }
     [Column(ColumnNames.TestSuite)] public string TestSuite { get; set; }
     [Column(ColumnNames.TestName)] public string TestName { get; set; }
     [Column(ColumnNames.Metadata)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string Metadata{ get; set; }
