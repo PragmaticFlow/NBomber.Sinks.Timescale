@@ -58,9 +58,7 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                     await connection.ExecuteNonQueryAsync($@"
                         INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
                         VALUES ({version})
-                        ;");
-
-                    logger.Debug("Created initial tables");
+                        ;");                    
                     break;
 
                 case 1:
@@ -74,19 +72,17 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                         UPDATE {TableNames.SchemaVersionTable}
                         SET ""{ColumnNames.Version}"" = {version}
                         WHERE ""{ColumnNames.Version}"" < 1;
-                        ");
-                    logger.Debug($"Migrated to version {version}");
+                        ");                    
                     break;
 
                 case 2:
                     await connection.ExecuteNonQueryAsync(SqlQueries.CreateMetricsTable);
-
+                    
                     await connection.ExecuteNonQueryAsync($@"
                         UPDATE {TableNames.SchemaVersionTable}
                         SET ""{ColumnNames.Version}"" = {version}
                         WHERE ""{ColumnNames.Version}"" < 2;
-                        ");
-                    logger.Debug($"Migrated to version {version}");
+                        ");                    
                     break;
 
                 case 3:
@@ -96,12 +92,12 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                         UPDATE {TableNames.SchemaVersionTable}
                         SET ""{ColumnNames.Version}"" = {version}
                         WHERE ""{ColumnNames.Version}"" < 3;
-                        ");
-                    logger.Debug($"Migrated to version {version}");
+                        ");                    
                     break;
             }
-
+            
             await transaction.CommitAsync();
+            logger.Debug($"Migrated to version {version}");
         }
         catch (Exception ex)
         {
