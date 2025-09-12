@@ -97,7 +97,7 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
             }
             
             await transaction.CommitAsync();
-            logger.Debug($"Migrated to version {version}");
+            logger.Debug($"NBomber.Sinks.Timescale migrated to version {version}");
         }
         catch (Exception ex)
         {
