@@ -43,59 +43,67 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
 
     private async Task ApplyMigration(int version)
     {
-        switch (version) 
-        {
-            case 0:
-                await connection.ExecuteNonQueryAsync(
-                    SqlQueries.CreateStepStatsTable
-                  + SqlQueries.CreateSessionsTable
-                  + SqlQueries.CreateDbSchemaVersion);
+        await using var transaction = await connection.BeginTransactionAsync();
 
-                await connection.ExecuteNonQueryAsync($@"
+        try
+        {
+            switch (version)
+            {
+                case 0:
+                    await connection.ExecuteNonQueryAsync(
+                        SqlQueries.CreateStepStatsTable
+                      + SqlQueries.CreateSessionsTable
+                      + SqlQueries.CreateDbSchemaVersion);
+
+                    await connection.ExecuteNonQueryAsync($@"
                         INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
                         VALUES ({version})
-                        ;");
-                
-                logger.Debug("Created initial tables");
-                break;
+                        ;");                    
+                    break;
 
-            case 1:
-                await connection.ExecuteNonQueryAsync($@"
+                case 1:
+                    await connection.ExecuteNonQueryAsync($@"
                         ALTER TABLE {TableNames.SessionsTable}
                         ADD COLUMN IF NOT EXISTS {ColumnNames.LastUpdatedTime} TIMESTAMPTZ;
-                ");
+                        ");
 
-                await connection.ExecuteNonQueryAsync(SqlQueries.CreateDbSchemaVersion);
-                await connection.ExecuteNonQueryAsync($@"
+                    await connection.ExecuteNonQueryAsync(SqlQueries.CreateDbSchemaVersion);
+                    await connection.ExecuteNonQueryAsync($@"
                         UPDATE {TableNames.SchemaVersionTable}
                         SET ""{ColumnNames.Version}"" = {version}
                         WHERE ""{ColumnNames.Version}"" < 1;
-                ");
-                logger.Debug($"Migrated to version {version}");
-                break;
-            
-            case 2:
-                await connection.ExecuteNonQueryAsync(SqlQueries.CreateMetricsTable);
-                
-                await connection.ExecuteNonQueryAsync($@"
+                        ");                    
+                    break;
+
+                case 2:
+                    await connection.ExecuteNonQueryAsync(SqlQueries.CreateMetricsTable);
+                    
+                    await connection.ExecuteNonQueryAsync($@"
                         UPDATE {TableNames.SchemaVersionTable}
                         SET ""{ColumnNames.Version}"" = {version}
                         WHERE ""{ColumnNames.Version}"" < 2;
-                ");
-                logger.Debug($"Migrated to version {version}");
-                break;
+                        ");                    
+                    break;
 
-            case 3:
-                await connection.ExecuteNonQueryAsync(SqlQueries.AddSimulationNameColumn);
+                case 3:
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddSimulationNameColumn);
 
-                await connection.ExecuteNonQueryAsync($@"
+                    await connection.ExecuteNonQueryAsync($@"
                         UPDATE {TableNames.SchemaVersionTable}
                         SET ""{ColumnNames.Version}"" = {version}
                         WHERE ""{ColumnNames.Version}"" < 3;
-                ");
-                logger.Debug($"Migrated to version {version}");
-                break;
+                        ");                    
+                    break;
+            }
+            
+            await transaction.CommitAsync();
+            logger.Debug($"Migrated to version {version}");
         }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            logger.Error(ex, $"Failed to migrate to version {version}. Transaction is being rolled back.");
+        }        
     }
 }
 
