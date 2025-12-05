@@ -101,6 +101,9 @@ internal static class SqlQueries
         SELECT create_hypertable('{TableNames.MetricsTable}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
         CREATE INDEX IF NOT EXISTS {ColumnNames.SessionId}_index ON {TableNames.MetricsTable} ({ColumnNames.SessionId})
        ";
+    
+    public static string SetNewChunkInterval(string table, int monthCount) =>
+        $"SELECT set_chunk_time_interval('{table}', interval '{monthCount} month');";
 
     public static string AddSimulationNameColumn => $@"
         ALTER TABLE ""{TableNames.StepStatsTable}""

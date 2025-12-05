@@ -31,9 +31,10 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
             await using var connection = new NpgsqlConnection(connectionString);
 
             await connection.ExecuteNonQueryAsync
-                (@$"DROP TABLE IF EXISTS {TableNames.SchemaVersionTable}, 
-                                         {TableNames.SessionsTable};
-                    DROP TABLE IF EXISTS {TableNames.StepStatsTable};");
+                (@$"DROP TABLE IF EXISTS {TableNames.SchemaVersionTable}; 
+                    DROP TABLE IF EXISTS {TableNames.SessionsTable};
+                    DROP TABLE IF EXISTS {TableNames.StepStatsTable};
+                    DROP TABLE IF EXISTS {TableNames.MetricsTable};");
         }
 
         public async Task<int> GetDBSchemaVersion()
