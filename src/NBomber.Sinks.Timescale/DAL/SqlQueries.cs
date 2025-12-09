@@ -74,7 +74,8 @@ internal static class SqlQueries
             ""{ColumnNames.TestSuite}"" TEXT,
             ""{ColumnNames.TestName}"" TEXT,
             ""{ColumnNames.Metadata}"" JSONB,
-            ""{ColumnNames.NodeInfo}"" JSONB            
+            ""{ColumnNames.NodeInfo}"" JSONB,
+            ""{ColumnNames.SessionResult}"" JSONB
         );    
        ";
 

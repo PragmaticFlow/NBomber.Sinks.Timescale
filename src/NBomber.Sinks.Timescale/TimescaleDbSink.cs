@@ -182,6 +182,7 @@ public class TimescaleDbSink : IReportingSink
             SessionId = testInfo.SessionId,
             CurrentOperation = operation,
             LastUpdatedTime = currentTime,
+            SessionResult = JsonSerializer.Serialize(stepsStats)
         };
 
         using var transaction = _mainConnection.EnsureOpen().BeginTransaction();
@@ -189,7 +190,7 @@ public class TimescaleDbSink : IReportingSink
         await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: (NpgsqlTransaction) transaction);
         await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: (NpgsqlTransaction) transaction);
 
-        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime });
+        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult });
         await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
                 
         transaction.Commit();
