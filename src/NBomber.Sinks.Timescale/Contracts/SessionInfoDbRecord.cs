@@ -16,4 +16,5 @@ internal class SessionInfoDbRecord
     [Column(ColumnNames.TestName)] public string TestName { get; set; }
     [Column(ColumnNames.Metadata)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string Metadata{ get; set; }
     [Column(ColumnNames.NodeInfo)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string NodeInfo { get; set; }
+    [Column(ColumnNames.SessionResult)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string SessionResult { get; set; }
 }

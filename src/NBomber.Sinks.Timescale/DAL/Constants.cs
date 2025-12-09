@@ -79,4 +79,6 @@ internal static class ColumnNames
 
     public const string Version = "version";
     public const string LastUpdatedTime = "last_updated_time";
+
+    public const string SessionResult = "session_result";
 }
