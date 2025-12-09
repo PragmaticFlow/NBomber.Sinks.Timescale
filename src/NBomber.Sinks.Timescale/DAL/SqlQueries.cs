@@ -74,8 +74,7 @@ internal static class SqlQueries
             ""{ColumnNames.TestSuite}"" TEXT,
             ""{ColumnNames.TestName}"" TEXT,
             ""{ColumnNames.Metadata}"" JSONB,
-            ""{ColumnNames.NodeInfo}"" JSONB,
-            ""{ColumnNames.SessionResult}"" JSONB
+            ""{ColumnNames.NodeInfo}"" JSONB
         );    
        ";
 
@@ -109,5 +108,10 @@ internal static class SqlQueries
     public static string AddSimulationNameColumn => $@"
         ALTER TABLE ""{TableNames.StepStatsTable}""
         ADD {ColumnNames.SimulationName} TEXT;
+       ";
+
+    public static string AddSessionResultColumn => $@"
+        ALTER TABLE ""{TableNames.SessionsTable}""
+        ADD {ColumnNames.SessionResult} JSONB;
        ";
 }
