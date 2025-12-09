@@ -98,7 +98,9 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                 case 4:
                     await connection.ExecuteNonQueryAsync(SqlQueries.SetNewChunkInterval(TableNames.StepStatsTable, monthCount: 1));
                     await connection.ExecuteNonQueryAsync(SqlQueries.SetNewChunkInterval(TableNames.MetricsTable, monthCount: 1));
-                    
+
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddSessionResultColumn);
+
                     await connection.ExecuteNonQueryAsync($@"
                         UPDATE {TableNames.SchemaVersionTable}
                         SET ""{ColumnNames.Version}"" = {version}
