@@ -30,12 +30,20 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
     {
         try
         {
-            var result = await connection.ExecuteQueryAsync<int>($@"SELECT ""{ColumnNames.Version}"" FROM {TableNames.SchemaVersionTable};");
+            var result =
+                await connection.ExecuteQueryAsync<int>(
+                    $@"SELECT ""{ColumnNames.Version}"" FROM {TableNames.SchemaVersionTable};");
             var currentDbVersion = result.FirstOrDefault();
             return currentDbVersion;
         }
+        catch (PostgresException ex)
+        {
+            if (ex.ErrorCode != -2147467259) // "nb_sink_schema_version" does't exist
+                logger.Error(ex, ex.Message);
+            return -1;
+        }
         catch (Exception ex) 
-        { 
+        {
             logger.Error(ex, ex.Message);
             return -1;
         }

@@ -121,7 +121,8 @@ public class TimescaleDbSink : IReportingSink
 
                 try
                 {
-                    var res = await _mainConnection.InsertAsync(tableName: TableNames.SessionsTable, record);
+                    await _mainConnection.EnsureOpenAsync();
+                    var res = await _mainConnection.InsertAsync(TableNames.SessionsTable, record);
                 }
                 catch (Exception ex)
                 {
@@ -144,7 +145,8 @@ public class TimescaleDbSink : IReportingSink
         var points = stats.Select(AddGlobalInfoStep)
             .SelectMany(step => MapStepToDbRecord(step, currentTime, OperationType.Bombing))
             .ToArray();
-            
+
+        await _mainConnection.EnsureOpenAsync();
         await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
     }
 
@@ -156,6 +158,7 @@ public class TimescaleDbSink : IReportingSink
     public async Task SaveRealtimeMetrics(MetricStats metrics)
     {
         var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, OperationType.Bombing);
+        await _mainConnection.EnsureOpenAsync();
         await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
@@ -185,15 +188,16 @@ public class TimescaleDbSink : IReportingSink
             SessionResult = JsonSerializer.Serialize(stepsStats)
         };
 
-        using var transaction = _mainConnection.EnsureOpen().BeginTransaction();
+        await _mainConnection.EnsureOpenAsync();
+        await using var ts = await _mainConnection.BeginTransactionAsync();
             
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: (NpgsqlTransaction) transaction);
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: (NpgsqlTransaction) transaction);
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
+        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
 
         var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult });
-        await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: transaction);
+        await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
                 
-        transaction.Commit();
+        await ts.CommitAsync();
     }
 
     /// <summary>
