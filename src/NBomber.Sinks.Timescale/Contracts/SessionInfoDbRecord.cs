@@ -18,3 +18,8 @@ internal class SessionInfoDbRecord
     [Column(ColumnNames.NodeInfo)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string NodeInfo { get; set; }
     [Column(ColumnNames.SessionResult)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string SessionResult { get; set; }
 }
+
+internal class SessionResult(StepStatsDbRecord[] stepStats)
+{
+    public StepStatsDbRecord[] StepStats { get; set; } = stepStats;
+}
