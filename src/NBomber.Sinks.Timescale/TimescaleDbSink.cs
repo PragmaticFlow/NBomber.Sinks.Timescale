@@ -185,7 +185,7 @@ public class TimescaleDbSink : IReportingSink
             SessionId = testInfo.SessionId,
             CurrentOperation = operation,
             LastUpdatedTime = currentTime,
-            SessionResult = JsonSerializer.Serialize(stepsStats)
+            SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats))
         };
 
         await _mainConnection.EnsureOpenAsync();
