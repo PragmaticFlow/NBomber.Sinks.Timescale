@@ -9,6 +9,7 @@ using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
 using NBomber.Sinks.Timescale.DAL;
+using MessagePack;
 
 namespace NBomber.Sinks.Timescale;
 
@@ -32,7 +33,7 @@ public class TimescaleDbSink : IReportingSink
     private IBaseContext _context;
     private NpgsqlConnection _mainConnection;
     private TimescaleDbSinkConfig _config = new("");
-    
+    private readonly MessagePackSerializerOptions lz4Options = MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
     /// <summary>
     /// Gets the name of the sink.
     /// </summary>
@@ -52,7 +53,7 @@ public class TimescaleDbSink : IReportingSink
         _config = config;
         _mainConnection = new NpgsqlConnection(_config.ConnectionString);
     }
-    
+
     /// <summary>
     /// Initializes the sink with the NBomber context and configuration.
     /// Also opens a connection to the TimescaleDB and runs database migrations.
@@ -71,25 +72,25 @@ public class TimescaleDbSink : IReportingSink
             _config = config;
             _mainConnection = new NpgsqlConnection(_config.ConnectionString);
         }
-        
+
         if (_mainConnection == null)
         {
             _logger.Error(
                 "Reporting Sink {0} has problems with initialization. The problem could be related to invalid config structure.",
                 SinkName);
-            
+
             throw new Exception(
                 $"Reporting Sink {SinkName} has problems with initialization. The problem could be related to invalid config structure.");
         }
-        
+
         GlobalConfiguration
             .Setup()
             .UsePostgreSql();
 
         await _mainConnection.OpenAsync();
-        
+
         var migration = new DbMigrations(_mainConnection, _logger);
-        await migration.Run();  
+        await migration.Run();
     }
 
     /// <summary>
@@ -141,7 +142,7 @@ public class TimescaleDbSink : IReportingSink
     public async Task SaveRealtimeStats(ScenarioStats[] stats)
     {
         var currentTime = DateTime.UtcNow;
-            
+
         var points = stats.Select(AddGlobalInfoStep)
             .SelectMany(step => MapStepToDbRecord(step, currentTime, OperationType.Bombing))
             .ToArray();
@@ -173,30 +174,35 @@ public class TimescaleDbSink : IReportingSink
         var currentTime = DateTime.UtcNow;
         var operation = OperationType.Complete;
         var testInfo = _context.TestInfo;
-            
+
         var metrics = MapMetricToDbRecord(stats.Metrics, currentTime, operation);
-            
+
         var stepsStats = stats.ScenarioStats.Select(AddGlobalInfoStep)
             .SelectMany(step => MapStepToDbRecord(step, currentTime, operation))
             .ToArray();
+
+        var htmlReport = stats.ReportFiles.FirstOrDefault(x => x.ReportFormat == ReportFormat.Html)?.ReportContent ?? string.Empty;
+        var htmlReportBytes = !string.IsNullOrEmpty(htmlReport)
+            ? MessagePackSerializer.Serialize(htmlReport, lz4Options)
+            : [];
 
         var queryEntity = new SessionInfoDbRecord
         {
             SessionId = testInfo.SessionId,
             CurrentOperation = operation,
             LastUpdatedTime = currentTime,
-            SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats))
+            SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats, htmlReportBytes))
         };
 
         await _mainConnection.EnsureOpenAsync();
         await using var ts = await _mainConnection.BeginTransactionAsync();
-            
+
         await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
         await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
 
         var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult });
         await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
-                
+
         await ts.CommitAsync();
     }
 
@@ -225,7 +231,7 @@ public class TimescaleDbSink : IReportingSink
     private MetricDbRecord[] MapMetricToDbRecord(MetricStats stats, DateTime currentTime, OperationType operationType)
     {
         var testInfo = _context.TestInfo;
-        
+
         var counters = stats.Counters.Select(x => new MetricDbRecord
         {
             Time = currentTime,
@@ -238,7 +244,7 @@ public class TimescaleDbSink : IReportingSink
             UnitOfMeasure = x.UnitOfMeasure,
             Value = x.Value
         });
-        
+
         var gauges = stats.Gauges.Select(x => new MetricDbRecord
         {
             Time = currentTime,
@@ -251,14 +257,14 @@ public class TimescaleDbSink : IReportingSink
             UnitOfMeasure = x.UnitOfMeasure,
             Value = x.Value
         });
-        
+
         return counters.Concat(gauges).ToArray();
     }
-    
+
     private StepStatsDbRecord[] MapStepToDbRecord(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
     {
         var testInfo = _context.TestInfo;
-        
+
         return scnStats.StepStats
             .Select(step =>
             {
@@ -267,7 +273,7 @@ public class TimescaleDbSink : IReportingSink
                 {
                     foreach (var status in step.Ok.StatusCodes)
                         status.Message = "";
-                    
+
                     foreach (var status in step.Fail.StatusCodes)
                         status.Message = "";
                 }
