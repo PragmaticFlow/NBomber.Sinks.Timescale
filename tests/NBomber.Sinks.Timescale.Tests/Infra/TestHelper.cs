@@ -40,7 +40,7 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
         public async Task<int> GetDBSchemaVersion()
         {
             await using var connection = new NpgsqlConnection(connectionString);
-         
+
             try
             {
                 var result = await connection.ExecuteQueryAsync<int>($@"SELECT ""{ColumnNames.Version}"" FROM {TableNames.SchemaVersionTable};");
@@ -66,6 +66,27 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
             catch
             {
                 return -1;
+            }
+        }
+
+        public async Task<string> GetHtmlReport(string sessionId)
+        {
+            await using var connection = new NpgsqlConnection(connectionString);
+
+            try
+            {
+                var result = await connection.ExecuteQueryAsync<string>(
+                    $@"SELECT {ColumnNames.SessionResult + "->>'HtmlReport'"}
+                    FROM {TableNames.SessionsTable}
+                    WHERE session_id = @sessionId",
+                    new { sessionId }
+                );
+
+                return result.Any() ? result.First() : string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
     }
