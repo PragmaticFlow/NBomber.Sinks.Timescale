@@ -38,8 +38,9 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
         }
         catch (PostgresException ex)
         {
-            if (ex.ErrorCode != -2147467259) // "nb_sink_schema_version" does't exist
+            if (ex.SqlState != "42P01") // table "nb_sink_schema_version" does't exist
                 logger.Error(ex, ex.Message);
+            
             return -1;
         }
         catch (Exception ex) 

@@ -33,7 +33,7 @@ public class TimescaleDbSink : IReportingSink
     private IBaseContext _context;
     private NpgsqlConnection _mainConnection;
     private TimescaleDbSinkConfig _config = new("");
-    private readonly MessagePackSerializerOptions lz4Options = MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
+    private static readonly MessagePackSerializerOptions Lz4Options = MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
     /// <summary>
     /// Gets the name of the sink.
     /// </summary>
@@ -183,7 +183,7 @@ public class TimescaleDbSink : IReportingSink
 
         var htmlReport = stats.ReportFiles.FirstOrDefault(x => x.ReportFormat == ReportFormat.Html)?.ReportContent ?? string.Empty;
         var htmlReportBytes = !string.IsNullOrEmpty(htmlReport)
-            ? MessagePackSerializer.Serialize(htmlReport, lz4Options)
+            ? MessagePackSerializer.Serialize(htmlReport, Lz4Options)
             : [];
 
         var queryEntity = new SessionInfoDbRecord
