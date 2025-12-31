@@ -100,9 +100,9 @@ namespace NBomber.Sinks.Timescale.Tests
                 .WithReportingSinks(fixture.CreateTimescaleDbSinkInstance())
                 .Run();
 
-            var sessionTableCount = await fixture.TestHelper.GetDataCount(TableNames.SessionsTable);
-            var stepStatsTableCount = await fixture.TestHelper.GetDataCount(TableNames.StepStatsTable);
-            var metricsTableCount = await fixture.TestHelper.GetDataCount(TableNames.MetricsTable);
+            var sessionTableCount = await fixture.TestHelper.GetRowsCount(TableNames.SessionsTable);
+            var stepStatsTableCount = await fixture.TestHelper.GetRowsCount(TableNames.StepStatsTable);
+            var metricsTableCount = await fixture.TestHelper.GetRowsCount(TableNames.MetricsTable);
             var htmlReportData = await fixture.TestHelper.GetHtmlReport(stats.TestInfo.SessionId);
 
             var htmlReport = MessagePackSerializer.Deserialize<string>(

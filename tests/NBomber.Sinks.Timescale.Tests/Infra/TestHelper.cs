@@ -53,7 +53,7 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
             }
         }
 
-        public async Task<int> GetDataCount(string tableName)
+        public async Task<int> GetRowsCount(string tableName)
         {
             await using var connection = new NpgsqlConnection(connectionString);
 
