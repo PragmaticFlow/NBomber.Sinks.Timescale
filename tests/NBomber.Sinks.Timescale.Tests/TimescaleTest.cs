@@ -1,10 +1,12 @@
 using MessagePack;
+using NBomber.Contracts.Stats;
 using NBomber.CSharp;
 using NBomber.Sinks.Timescale.DAL;
 using NBomber.Sinks.Timescale.Tests.Infra;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.InMemory;
+using Shouldly;
 
 namespace NBomber.Sinks.Timescale.Tests
 {
@@ -114,6 +116,46 @@ namespace NBomber.Sinks.Timescale.Tests
             Assert.True(sessionTableCount == 1);
             Assert.True(stepStatsTableCount > 0);
             Assert.True(metricsTableCount > 0);
+        }
+
+        [Fact]
+        public async Task Should_Stop_Session_By_Sql_Notification()
+        {
+            await fixture.TestHelper.DeleteTables();
+
+            var scenario = Scenario.Create("user_flow_scenario", async context =>
+            {
+                var step1 = await Step.Run("step1", context, async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    return Response.Ok(sizeBytes: 10, statusCode: "200");
+                });
+                return Response.Ok(statusCode: "201", message: "hey");
+            })
+            .WithoutWarmUp()
+            .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(120)));
+
+            var sessionId = Guid.CreateVersion7().ToString();
+
+            var args = new string[] {
+                $"--session-id={sessionId}"
+            };
+
+            var process = Task.Run(() =>
+            {
+                return NBomberRunner
+                .RegisterScenarios(scenario)
+                .WithReportingSinks(fixture.CreateTimescaleDbSinkInstance())
+                .Run(args);
+            });
+
+            await Task.Delay(TimeSpan.FromSeconds(6));
+
+            await fixture.TestHelper.NotifyStopSession(sessionId);
+
+            var scenarioResult = await process;
+
+            scenarioResult.NodeInfo.CurrentOperation.ShouldBe(OperationType.Stop);
         }
     }
 }

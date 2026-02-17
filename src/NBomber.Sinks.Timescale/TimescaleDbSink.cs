@@ -34,6 +34,8 @@ public class TimescaleDbSink : IReportingSink
     private NpgsqlConnection _mainConnection;
     private TimescaleDbSinkConfig _config = new("");
     private static readonly MessagePackSerializerOptions Lz4Options = MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
+    private static readonly string StopSessionChannelName = "nbomber_stop_session";
+
     /// <summary>
     /// Gets the name of the sink.
     /// </summary>
@@ -88,6 +90,8 @@ public class TimescaleDbSink : IReportingSink
             .UsePostgreSql();
 
         await _mainConnection.OpenAsync();
+
+        await SubscribeToDbNotifications(_mainConnection);
 
         var migration = new DbMigrations(_mainConnection, _logger);
         await migration.Run();
@@ -191,6 +195,7 @@ public class TimescaleDbSink : IReportingSink
             SessionId = testInfo.SessionId,
             CurrentOperation = operation,
             LastUpdatedTime = currentTime,
+            NodeInfo = Json.serialize(_context.GetNodeInfo()),
             SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats, htmlReportBytes))
         };
 
@@ -200,7 +205,7 @@ public class TimescaleDbSink : IReportingSink
         await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
         await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
 
-        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult });
+        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult, e.NodeInfo });
         await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
 
         await ts.CommitAsync();
@@ -216,6 +221,8 @@ public class TimescaleDbSink : IReportingSink
     /// </summary>
     public void Dispose()
     {
+        UnsubcribeFromDbNotifications(_mainConnection).Wait();
+
         _mainConnection?.Close();
         _mainConnection?.Dispose();
     }
@@ -337,5 +344,25 @@ public class TimescaleDbSink : IReportingSink
                 SimulationValue = scnStats.LoadSimulationStats.Value
             })
             .ToArray();
+    }
+
+    private async Task SubscribeToDbNotifications(NpgsqlConnection connection)
+    {
+        await connection.ExecuteNonQueryAsync($"LISTEN {StopSessionChannelName}");
+        connection.Notification += HandleDbNotification;
+    }
+
+    private void HandleDbNotification(object sender, NpgsqlNotificationEventArgs e)
+    {
+        if (e.Payload == _context.TestInfo.SessionId)
+        {
+            _context.StopCurrentTest("Test stop message received.");
+        }
+    }
+
+    private async Task UnsubcribeFromDbNotifications(NpgsqlConnection connection)
+    {
+        await connection.ExecuteNonQueryAsync($"UNLISTEN {StopSessionChannelName}");
+        connection.Notification -= HandleDbNotification;
     }
 }

@@ -37,6 +37,13 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
                     DROP TABLE IF EXISTS {TableNames.MetricsTable};");
         }
 
+        public async Task NotifyStopSession(string sessionId)
+        {
+            await using var connection = new NpgsqlConnection(connectionString);
+
+            await connection.ExecuteNonQueryAsync($"SELECT PG_NOTIFY('stop_session', '{sessionId}')");
+        }
+
         public async Task<int> GetDBSchemaVersion()
         {
             await using var connection = new NpgsqlConnection(connectionString);
