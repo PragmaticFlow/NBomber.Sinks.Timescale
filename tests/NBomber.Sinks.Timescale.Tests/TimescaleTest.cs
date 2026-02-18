@@ -119,7 +119,7 @@ namespace NBomber.Sinks.Timescale.Tests
         }
 
         [Fact]
-        public async Task Should_Stop_Session_By_Sql_Notification()
+        public async Task Should_Stop_Session_By_Db_Notification()
         {
             await fixture.TestHelper.DeleteTables();
 
@@ -144,9 +144,9 @@ namespace NBomber.Sinks.Timescale.Tests
             var process = Task.Run(() =>
             {
                 return NBomberRunner
-                .RegisterScenarios(scenario)
-                .WithReportingSinks(fixture.CreateTimescaleDbSinkInstance())
-                .Run(args);
+                    .RegisterScenarios(scenario)
+                    .WithReportingSinks(fixture.CreateTimescaleDbSinkInstance())
+                    .Run(args);
             });
 
             await Task.Delay(TimeSpan.FromSeconds(6));
@@ -154,6 +154,8 @@ namespace NBomber.Sinks.Timescale.Tests
             await fixture.TestHelper.NotifyStopSession(sessionId);
 
             var scenarioResult = await process;
+
+            scenarioResult.Duration.ShouldBeLessThan(TimeSpan.FromSeconds(10));
 
             scenarioResult.NodeInfo.CurrentOperation.ShouldBe(OperationType.Stop);
         }
