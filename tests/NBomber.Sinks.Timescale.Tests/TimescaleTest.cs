@@ -110,7 +110,7 @@ namespace NBomber.Sinks.Timescale.Tests
                 options: _lz4Options
             );
 
-            Assert.Contains("<!DOCTYPE HTML>", htmlReport);
+            Assert.Contains("<!DOCTYPE HTML>".ToLowerInvariant(), htmlReport.ToLowerInvariant());
             Assert.True(sessionTableCount == 1);
             Assert.True(stepStatsTableCount > 0);
             Assert.True(metricsTableCount > 0);

@@ -10,22 +10,30 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.2">
+    <PackageReference Include="coverlet.collector" Version="8.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Ductus.FluentDocker" Version="2.10.59" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="NBomber" Version="6.1.0" />
+    <PackageReference Include="Ductus.FluentDocker" Version="2.85.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="NBomber" Version="6.2.0" />
 	<PackageReference Include="RepoDb.PostgreSql" Version="1.13.1" />
-	<PackageReference Include="Serilog.Sinks.InMemory" Version="0.16.0" />
+	<PackageReference Include="Serilog.Sinks.InMemory" Version="2.0.0" />
     <PackageReference Include="xunit" Version="2.9.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
+  <PropertyGroup>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode> <!-- Audit direct and transitive packages -->
+    <NuGetAuditLevel>low</NuGetAuditLevel> <!-- Report low, moderate, high and critical advisories -->
+    <!-- Fails the build on CI or on release when a vulnerability is detected -->
+    <WarningsAsErrors>(WarningsAsErrors);NU1900;NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+  </PropertyGroup>
+  
   <ItemGroup>
     <ProjectReference Include="..\..\src\NBomber.Sinks.Timescale\NBomber.Sinks.Timescale.csproj" />
   </ItemGroup>
