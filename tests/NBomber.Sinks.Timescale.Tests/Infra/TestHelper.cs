@@ -4,11 +4,11 @@ using RepoDb;
 
 namespace NBomber.Sinks.Timescale.Tests.Infra
 {
-    public class TestHelper(string connectionString)
+    public class TestHelper(NpgsqlDataSource dataSource)
     {
         public async Task CreateTables()
         {
-            await using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = await dataSource.OpenConnectionAsync();
 
             await connection.ExecuteNonQueryAsync(
                         SqlQueries.CreateStepStatsTable
@@ -18,7 +18,7 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
 
         public async Task SetDbSchemaVersion(int version)
         {
-            await using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = await dataSource.OpenConnectionAsync();
 
             await connection.ExecuteNonQueryAsync($@"
                             INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
@@ -28,7 +28,7 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
 
         public async Task DeleteTables()
         {
-            await using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = await dataSource.OpenConnectionAsync();
 
             await connection.ExecuteNonQueryAsync
                 (@$"DROP TABLE IF EXISTS {TableNames.SchemaVersionTable}; 
@@ -37,9 +37,16 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
                     DROP TABLE IF EXISTS {TableNames.MetricsTable};");
         }
 
+        public async Task NotifyStopSession(string sessionId)
+        {
+            await using var connection = await dataSource.OpenConnectionAsync();
+
+            await connection.ExecuteNonQueryAsync($"SELECT PG_NOTIFY('nbomber_stop_session__{sessionId.Replace('-', '_')}', '')");
+        }
+
         public async Task<int> GetDBSchemaVersion()
         {
-            await using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = await dataSource.OpenConnectionAsync();
 
             try
             {
@@ -55,7 +62,7 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
 
         public async Task<int> GetRowsCount(string tableName)
         {
-            await using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = await dataSource.OpenConnectionAsync();
 
             try
             {
@@ -71,7 +78,7 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
 
         public async Task<string> GetHtmlReport(string sessionId)
         {
-            await using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = await dataSource.OpenConnectionAsync();
 
             try
             {

@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS8602, CS8618
-using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Builders;
+using Ductus.FluentDocker.Services;
+using Npgsql;
 using System.Text.Json;
 
 namespace NBomber.Sinks.Timescale.Tests.Infra
@@ -30,9 +31,12 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
                 _docker.Start();
             }
 
-            HealthCheck.WaitUntilReady(_config.DBSettings.ConnectionString).Wait();
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(_config.DBSettings.ConnectionString);
+            var dataSource = dataSourceBuilder.Build();
 
-            TestHelper = new TestHelper(_config.DBSettings.ConnectionString);
+            HealthCheck.WaitUntilReady(dataSource).Wait();
+
+            TestHelper = new TestHelper(dataSource);
         }
 
         public TimescaleDbSink CreateTimescaleDbSinkInstance()

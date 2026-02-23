@@ -31,9 +31,13 @@ public class TimescaleDbSink : IReportingSink
 {
     private ILogger _logger;
     private IBaseContext _context;
-    private NpgsqlConnection _mainConnection;
+    private NpgsqlDataSource _dataSource;
     private TimescaleDbSinkConfig _config = new("");
+    private bool _disposed = false;
+
     private static readonly MessagePackSerializerOptions Lz4Options = MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
+    internal static readonly string StopSessionChannelName = "nbomber_stop_session";
+
     /// <summary>
     /// Gets the name of the sink.
     /// </summary>
@@ -51,7 +55,8 @@ public class TimescaleDbSink : IReportingSink
     public TimescaleDbSink(TimescaleDbSinkConfig config)
     {
         _config = config;
-        _mainConnection = new NpgsqlConnection(_config.ConnectionString);
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(config.ConnectionString);
+        _dataSource = dataSourceBuilder.Build();
     }
 
     /// <summary>
@@ -70,10 +75,11 @@ public class TimescaleDbSink : IReportingSink
         if (config != null)
         {
             _config = config;
-            _mainConnection = new NpgsqlConnection(_config.ConnectionString);
+            var dataSourceBuilder = new NpgsqlDataSourceBuilder(_config.ConnectionString);
+            _dataSource = dataSourceBuilder.Build();
         }
 
-        if (_mainConnection == null)
+        if (_dataSource == null)
         {
             _logger.Error(
                 "Reporting Sink {0} has problems with initialization. The problem could be related to invalid config structure.",
@@ -87,9 +93,10 @@ public class TimescaleDbSink : IReportingSink
             .Setup()
             .UsePostgreSql();
 
-        await _mainConnection.OpenAsync();
+        await SubscribeToDbNotifications(_dataSource);
 
-        var migration = new DbMigrations(_mainConnection, _logger);
+        await using var connection = await _dataSource.OpenConnectionAsync();
+        var migration = new DbMigrations(connection, _logger);
         await migration.Run();
     }
 
@@ -100,7 +107,7 @@ public class TimescaleDbSink : IReportingSink
     /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task Start(SessionStartInfo sessionInfo)
     {
-        if (_mainConnection != null)
+        if (_dataSource != null)
         {
             var nodeInfo = _context.GetNodeInfo();
             var testInfo = _context.TestInfo;
@@ -122,8 +129,8 @@ public class TimescaleDbSink : IReportingSink
 
                 try
                 {
-                    await _mainConnection.EnsureOpenAsync();
-                    var res = await _mainConnection.InsertAsync(TableNames.SessionsTable, record);
+                    await using var connection = await _dataSource.OpenConnectionAsync();
+                    var res = await connection.InsertAsync(TableNames.SessionsTable, record);
                 }
                 catch (Exception ex)
                 {
@@ -147,8 +154,8 @@ public class TimescaleDbSink : IReportingSink
             .SelectMany(step => MapStepToDbRecord(step, currentTime, OperationType.Bombing))
             .ToArray();
 
-        await _mainConnection.EnsureOpenAsync();
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
+        await using var connection = await _dataSource.OpenConnectionAsync();
+        await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
     }
 
     /// <summary>
@@ -159,8 +166,9 @@ public class TimescaleDbSink : IReportingSink
     public async Task SaveRealtimeMetrics(MetricStats metrics)
     {
         var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, OperationType.Bombing);
-        await _mainConnection.EnsureOpenAsync();
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
+        
+        var connection = await _dataSource.OpenConnectionAsync();
+        await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
     /// <summary>
@@ -189,19 +197,19 @@ public class TimescaleDbSink : IReportingSink
         var queryEntity = new SessionInfoDbRecord
         {
             SessionId = testInfo.SessionId,
-            CurrentOperation = operation,
+            CurrentOperation = stats.NodeInfo.CurrentOperation,
             LastUpdatedTime = currentTime,
             SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats, htmlReportBytes))
         };
 
-        await _mainConnection.EnsureOpenAsync();
-        await using var ts = await _mainConnection.BeginTransactionAsync();
+        await using var connection = await _dataSource.OpenConnectionAsync();
+        await using var ts = await connection.BeginTransactionAsync();
 
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
-        await _mainConnection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
+        await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
+        await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
 
-        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult });
-        await _mainConnection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
+        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult, e.NodeInfo });
+        await connection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
 
         await ts.CommitAsync();
     }
@@ -216,8 +224,12 @@ public class TimescaleDbSink : IReportingSink
     /// </summary>
     public void Dispose()
     {
-        _mainConnection?.Close();
-        _mainConnection?.Dispose();
+        if (!_disposed)
+        {
+            _dataSource?.Dispose();
+
+            _disposed = true;
+        }
     }
 
     private ScenarioStats AddGlobalInfoStep(ScenarioStats scnStats)
@@ -337,5 +349,41 @@ public class TimescaleDbSink : IReportingSink
                 SimulationValue = scnStats.LoadSimulationStats.Value
             })
             .ToArray();
+    }
+
+    private async Task SubscribeToDbNotifications(NpgsqlDataSource dataSource)
+    {
+        _ = Task.Run(async () =>
+        {
+            while (!_disposed)
+            {
+                try
+                {
+                    await using var connection = await dataSource.OpenConnectionAsync();
+
+                    var channel = $"{StopSessionChannelName}__{_context.TestInfo.SessionId.Replace("-", "_")}";
+
+                    await connection.ExecuteNonQueryAsync($"LISTEN {channel}");
+
+                    connection.Notification += (obj, e) =>
+                    {
+                        _context.StopCurrentTest("Test stop message received.");
+                    };
+
+                    while (!_disposed)
+                    {
+                        _logger.Debug("waiting on the PUSH message");
+                        await connection.WaitAsync();
+                    }
+
+                    await connection.ExecuteNonQueryAsync($"UNLISTEN {channel}");
+                }
+                catch (Exception ex) when (!_disposed)
+                {
+                    _logger.Warning(ex, "Failed to reconnect, retrying in 5s...");
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                }
+            }
+        });
     }
 }
