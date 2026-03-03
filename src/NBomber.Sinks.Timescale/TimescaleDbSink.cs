@@ -93,7 +93,7 @@ public class TimescaleDbSink : IReportingSink
             .Setup()
             .UsePostgreSql();
 
-        await SubscribeToDbNotifications(_dataSource);
+        SubscribeToDbNotifications(_dataSource);
 
         await using var connection = await _dataSource.OpenConnectionAsync();
         var migration = new DbMigrations(connection, _logger);
@@ -351,7 +351,7 @@ public class TimescaleDbSink : IReportingSink
             .ToArray();
     }
 
-    private async Task SubscribeToDbNotifications(NpgsqlDataSource dataSource)
+    private void SubscribeToDbNotifications(NpgsqlDataSource dataSource)
     {
         _ = Task.Run(async () =>
         {
@@ -362,17 +362,17 @@ public class TimescaleDbSink : IReportingSink
                     await using var connection = await dataSource.OpenConnectionAsync();
 
                     var channel = $"{StopSessionChannelName}__{_context.TestInfo.SessionId.Replace("-", "_")}";
-
+                    
                     await connection.ExecuteNonQueryAsync($"LISTEN {channel}");
 
                     connection.Notification += (obj, e) =>
                     {
-                        _context.StopCurrentTest("Test stop message received.");
+                        _context.StopCurrentTest(reason: "");
                     };
 
                     while (!_disposed)
                     {
-                        _logger.Debug("waiting on the PUSH message");
+                        _logger.Debug($"{nameof(TimescaleDbSink)}: waiting on the PUSH message");
                         await connection.WaitAsync();
                     }
 
@@ -380,7 +380,7 @@ public class TimescaleDbSink : IReportingSink
                 }
                 catch (Exception ex) when (!_disposed)
                 {
-                    _logger.Warning(ex, "Failed to reconnect, retrying in 5s...");
+                    _logger.Warning(ex, $"{nameof(TimescaleDbSink)}: failed to connect, retrying in 5s...");
                     await Task.Delay(TimeSpan.FromSeconds(5));
                 }
             }
