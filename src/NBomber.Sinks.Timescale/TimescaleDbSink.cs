@@ -167,7 +167,7 @@ public class TimescaleDbSink : IReportingSink
     {
         var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, OperationType.Bombing);
         
-        var connection = await _dataSource.OpenConnectionAsync();
+        await using var connection = await _dataSource.OpenConnectionAsync();
         await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
