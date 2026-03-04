@@ -16,8 +16,8 @@
     </PackageReference>
     <PackageReference Include="Ductus.FluentDocker" Version="2.85.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-    <PackageReference Include="NBomber" Version="6.3.0-beta.3" />
-    <PackageReference Include="NBomber.Contracts" Version="6.2.0-beta.1" />
+    <PackageReference Include="NBomber" Version="6.3.0-beta.6" />
+    <PackageReference Include="NBomber.Contracts" Version="6.2.0-beta.3" />
 	<PackageReference Include="RepoDb.PostgreSql" Version="1.13.1" />
 	<PackageReference Include="Serilog.Sinks.InMemory" Version="2.0.0" />
 	<PackageReference Include="Shouldly" Version="4.3.0" />
