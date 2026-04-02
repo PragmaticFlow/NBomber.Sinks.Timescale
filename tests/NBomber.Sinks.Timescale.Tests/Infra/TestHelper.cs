@@ -1,6 +1,8 @@
 ﻿using NBomber.Sinks.Timescale.DAL;
 using Npgsql;
 using RepoDb;
+using System.IO.Compression;
+using System.Text;
 
 namespace NBomber.Sinks.Timescale.Tests.Infra
 {
@@ -76,25 +78,40 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
             }
         }
 
-        public async Task<string> GetHtmlReport(string sessionId)
+        public async Task<Dictionary<string, string>> GetSessionArtifacts(string sessionId)
         {
             await using var connection = await dataSource.OpenConnectionAsync();
 
             try
             {
-                var result = await connection.ExecuteQueryAsync<string>(
-                    $@"SELECT {ColumnNames.SessionResult + "->>'HtmlReport'"}
+                var result = await connection.ExecuteQueryAsync<byte[]>(
+                    $@"SELECT {ColumnNames.Artifacts}
                     FROM {TableNames.SessionsTable}
                     WHERE session_id = @sessionId",
                     new { sessionId }
                 );
 
-                return result.Any() ? result.First() : string.Empty;
+                return result.Any() ? UnzipReportFiles(result.First()) : [];
             }
             catch
             {
-                return string.Empty;
+                return [];
             }
+        }
+
+        public static Dictionary<string, string> UnzipReportFiles(byte[] artifacts)
+        {
+            using var memoryStream = new MemoryStream(artifacts);
+            using var archive = new ZipArchive(memoryStream, ZipArchiveMode.Read);
+
+            return archive.Entries
+                .Select(entry =>
+                {
+                    using var stream = entry.Open();
+                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                    return (entry.Name, reader.ReadToEnd());
+                })
+                .ToDictionary();
         }
     }
 }

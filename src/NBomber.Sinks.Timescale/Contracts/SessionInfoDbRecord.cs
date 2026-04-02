@@ -17,10 +17,10 @@ internal class SessionInfoDbRecord
     [Column(ColumnNames.Metadata)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string Metadata { get; set; }
     [Column(ColumnNames.NodeInfo)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string NodeInfo { get; set; }
     [Column(ColumnNames.SessionResult)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string SessionResult { get; set; }
+    [Column(ColumnNames.Artifacts)][NpgsqlDbType(NpgsqlDbType.Bytea)] public byte[] Artifacts { get; set;  }
 }
 
-internal class SessionResult(StepStatsDbRecord[] stepStats, byte[] htmlReport)
+internal class SessionResult(StepStatsDbRecord[] stepStats)
 {
     public StepStatsDbRecord[] StepStats { get; set; } = stepStats;
-    public byte[] HtmlReport { get; set; } = htmlReport;
 }

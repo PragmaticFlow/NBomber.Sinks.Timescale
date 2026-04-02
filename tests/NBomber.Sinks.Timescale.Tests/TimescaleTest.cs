@@ -105,17 +105,19 @@ namespace NBomber.Sinks.Timescale.Tests
             var sessionTableCount = await fixture.TestHelper.GetRowsCount(TableNames.SessionsTable);
             var stepStatsTableCount = await fixture.TestHelper.GetRowsCount(TableNames.StepStatsTable);
             var metricsTableCount = await fixture.TestHelper.GetRowsCount(TableNames.MetricsTable);
-            var htmlReportData = await fixture.TestHelper.GetHtmlReport(stats.TestInfo.SessionId);
+            var sessionArtifacts = await fixture.TestHelper.GetSessionArtifacts(stats.TestInfo.SessionId);
 
-            var htmlReport = MessagePackSerializer.Deserialize<string>(
-                buffer: Convert.FromBase64String(htmlReportData), 
-                options: _lz4Options
-            );
+            var htmlReport = sessionArtifacts
+                .FirstOrDefault(x => x.Key.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+                .Value;
 
-            Assert.Contains("<!DOCTYPE HTML>".ToLowerInvariant(), htmlReport.ToLowerInvariant());
-            Assert.True(sessionTableCount == 1);
-            Assert.True(stepStatsTableCount > 0);
-            Assert.True(metricsTableCount > 0);
+            htmlReport.ShouldNotBeNull();
+
+            htmlReport.ShouldContain("<!DOCTYPE HTML>", Case.Insensitive);
+            sessionArtifacts.ShouldContain(x => x.Key.StartsWith("nbomber-log-", StringComparison.OrdinalIgnoreCase)); // should contain file nbomber-log-****
+            sessionTableCount.ShouldBe(1);
+            stepStatsTableCount.ShouldBeGreaterThan(0);
+            metricsTableCount.ShouldBeGreaterThan(0);
         }
 
         [Fact]
