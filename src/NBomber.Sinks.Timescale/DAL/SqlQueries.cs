@@ -114,4 +114,9 @@ internal static class SqlQueries
         ALTER TABLE ""{TableNames.SessionsTable}""
         ADD {ColumnNames.SessionResult} JSONB;
        ";
+
+    public static string AddArtifactsColumn => $@"
+        ALTER TABLE ""{TableNames.SessionsTable}""
+        ADD {ColumnNames.Artifacts} BYTEA;
+        ";
 }

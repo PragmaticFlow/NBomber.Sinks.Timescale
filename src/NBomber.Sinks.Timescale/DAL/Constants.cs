@@ -81,4 +81,5 @@ internal static class ColumnNames
     public const string LastUpdatedTime = "last_updated_time";
 
     public const string SessionResult = "session_result";
+    public const string Artifacts = "artifacts";
 }

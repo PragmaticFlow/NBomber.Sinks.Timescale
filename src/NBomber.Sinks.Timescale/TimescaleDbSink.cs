@@ -1,3 +1,5 @@
+using System.IO.Compression;
+using System.Text;
 using System.Text.Json;
 using FSharp.Json;
 using Microsoft.Extensions.Configuration;
@@ -9,7 +11,6 @@ using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
 using NBomber.Sinks.Timescale.DAL;
-using MessagePack;
 
 namespace NBomber.Sinks.Timescale;
 
@@ -35,7 +36,6 @@ public class TimescaleDbSink : IReportingSink
     private TimescaleDbSinkConfig _config = new("");
     private bool _disposed = false;
 
-    private static readonly MessagePackSerializerOptions Lz4Options = MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray);
     internal static readonly string StopSessionChannelName = "nbomber_stop_session";
 
     /// <summary>
@@ -189,9 +189,8 @@ public class TimescaleDbSink : IReportingSink
             .SelectMany(step => MapStepToDbRecord(step, currentTime, operation))
             .ToArray();
 
-        var htmlReport = stats.ReportFiles.FirstOrDefault(x => x.ReportFormat == ReportFormat.Html)?.ReportContent ?? string.Empty;
-        var htmlReportBytes = !string.IsNullOrEmpty(htmlReport)
-            ? MessagePackSerializer.Serialize(htmlReport, Lz4Options)
+        var artifacts = stats.ReportFiles.Length > 0
+            ? ZipArtifacts(Path.GetDirectoryName(stats.ReportFiles.First().FilePath))
             : [];
 
         var queryEntity = new SessionInfoDbRecord
@@ -199,7 +198,8 @@ public class TimescaleDbSink : IReportingSink
             SessionId = testInfo.SessionId,
             CurrentOperation = stats.NodeInfo.CurrentOperation,
             LastUpdatedTime = currentTime,
-            SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats, htmlReportBytes))
+            SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats)),
+            Artifacts = artifacts.Length == 0 ? null : artifacts
         };
 
         await using var connection = await _dataSource.OpenConnectionAsync();
@@ -208,7 +208,7 @@ public class TimescaleDbSink : IReportingSink
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
         await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
 
-        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult, e.NodeInfo });
+        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult, e.NodeInfo, e.Artifacts });
         await connection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
 
         await ts.CommitAsync();
@@ -385,5 +385,38 @@ public class TimescaleDbSink : IReportingSink
                 }
             }
         });
+    }
+
+    private byte[] ZipArtifacts(string folderPath)
+    {
+        if (!Directory.Exists(folderPath))
+            return [];
+
+        var files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+
+        if (files.Length == 0)
+            return [];
+
+        var artifacts = files.ToDictionary(Path.GetFileName, filePath =>
+        {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+
+            return reader.ReadToEnd();
+        });
+
+        using var memoryStream = new MemoryStream();
+        using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var (fileName, content) in artifacts)
+            {
+                var entry = archive.CreateEntry(fileName, CompressionLevel.Optimal);
+                using var entryStream = entry.Open();
+                using var writer = new StreamWriter(entryStream, Encoding.UTF8);
+                writer.Write(content);
+            }
+        }
+
+        return memoryStream.ToArray();
     }
 }
