@@ -30,9 +30,7 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
     {
         try
         {
-            var result =
-                await connection.ExecuteQueryAsync<int>(
-                    $@"SELECT ""{ColumnNames.Version}"" FROM {TableNames.SchemaVersionTable};");
+            var result = await connection.ExecuteQueryAsync<int>($@"SELECT ""{ColumnNames.Version}"" FROM {TableNames.SchemaVersionTable};");
             var currentDbVersion = result.FirstOrDefault();
             return currentDbVersion;
         }
