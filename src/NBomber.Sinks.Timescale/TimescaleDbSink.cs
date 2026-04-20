@@ -17,12 +17,17 @@ namespace NBomber.Sinks.Timescale;
 /// <summary>
 /// Configuration class for the TimescaleDbSink.
 /// </summary>
-public class TimescaleDbSinkConfig(string connectionString)
+public class TimescaleDbSinkConfig(string connectionString, bool listenStopCommandEnabled = true)
 {
     /// <summary>
     /// Gets or sets the connection string for TimescaleDB.
     /// </summary>
     public string ConnectionString { get; set; } = connectionString;
+
+    /// <summary>
+    /// Indicates whether PostgreSQL session channel (LISTEN/NOTIFY) is enabled.
+    /// </summary>
+    public bool ListenStopCommandEnabled { get; set; } = listenStopCommandEnabled;
 }
 
 /// <summary>
@@ -35,6 +40,7 @@ public class TimescaleDbSink : IReportingSink
     private NpgsqlDataSource _dataSource;
     private TimescaleDbSinkConfig _config = new("");
     private bool _disposed = false;
+    private CancellationTokenSource _sessionChannelCTS = new();
 
     internal static readonly string StopSessionChannelName = "nbomber_stop_session";
 
@@ -42,6 +48,11 @@ public class TimescaleDbSink : IReportingSink
     /// Gets the name of the sink.
     /// </summary>
     public string SinkName => "NBomber.Sinks.TimescaleDb";
+
+    /// <summary>
+    /// Indicates whether the stop command is currently being listened for.
+    /// </summary>
+    public bool StopCommandListening { get; set; } = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TimescaleDbSink"/> class with default configuration.
@@ -93,7 +104,11 @@ public class TimescaleDbSink : IReportingSink
             .Setup()
             .UsePostgreSql();
 
-        SubscribeToDbNotifications(_dataSource);
+        var nodeInfo = context.GetNodeInfo();
+        if (!nodeInfo.NodeType.IsAgent && _config.ListenStopCommandEnabled) 
+        {
+            StartListenStopCommand(_dataSource);
+        }
 
         await using var connection = await _dataSource.OpenConnectionAsync();
         var migration = new DbMigrations(connection, _logger);
@@ -226,8 +241,8 @@ public class TimescaleDbSink : IReportingSink
     {
         if (!_disposed)
         {
+            _sessionChannelCTS.Cancel();
             _dataSource?.Dispose();
-
             _disposed = true;
         }
     }
@@ -351,7 +366,12 @@ public class TimescaleDbSink : IReportingSink
             .ToArray();
     }
 
-    private void SubscribeToDbNotifications(NpgsqlDataSource dataSource)
+    private string GetListenStopCommandChannelName()
+    {
+        return $"{StopSessionChannelName}__{_context.TestInfo.SessionId.Replace("-", "_")}";
+    }
+
+    private void StartListenStopCommand(NpgsqlDataSource dataSource)
     {
         _ = Task.Run(async () =>
         {
@@ -361,7 +381,7 @@ public class TimescaleDbSink : IReportingSink
                 {
                     await using var connection = await dataSource.OpenConnectionAsync();
 
-                    var channel = $"{StopSessionChannelName}__{_context.TestInfo.SessionId.Replace("-", "_")}";
+                    var channel = GetListenStopCommandChannelName();
                     
                     await connection.ExecuteNonQueryAsync($"LISTEN {channel}");
 
@@ -372,16 +392,26 @@ public class TimescaleDbSink : IReportingSink
 
                     while (!_disposed)
                     {
+                        StopCommandListening = true;
                         _logger.Debug($"{nameof(TimescaleDbSink)}: waiting on the PUSH message");
-                        await connection.WaitAsync();
+                        
+                        await connection.WaitAsync(_sessionChannelCTS.Token);
                     }
 
                     await connection.ExecuteNonQueryAsync($"UNLISTEN {channel}");
+                }
+                catch (OperationCanceledException)
+                {
+                    // do nothing
                 }
                 catch (Exception ex) when (!_disposed)
                 {
                     _logger.Warning(ex, $"{nameof(TimescaleDbSink)}: failed to connect, retrying in 5s...");
                     await Task.Delay(TimeSpan.FromSeconds(5));
+                }
+                finally
+                {
+                    StopCommandListening = false;
                 }
             }
         });
@@ -397,13 +427,16 @@ public class TimescaleDbSink : IReportingSink
         if (files.Length == 0)
             return [];
 
-        var artifacts = files.ToDictionary(Path.GetFileName, filePath =>
-        {
-            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var reader = new StreamReader(stream, Encoding.UTF8);
+        var artifacts = files.ToDictionary(
+            filePath => Path.GetRelativePath(folderPath, filePath), 
+            filePath =>
+            {
+                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
 
-            return reader.ReadToEnd();
-        });
+                return reader.ReadToEnd();
+            }
+        );
 
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
