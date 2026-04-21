@@ -43,7 +43,12 @@ namespace NBomber.Sinks.Timescale.Tests.Infra
         {
             return new TimescaleDbSink(new TimescaleDbSinkConfig(_config.DBSettings.ConnectionString));
         }
-        
+
+        public TimescaleDbSink CreateTimescaleDbSinkInstance(bool listenStopCommandEnabled = true)
+        {
+            return new TimescaleDbSink(new TimescaleDbSinkConfig(_config.DBSettings.ConnectionString, listenStopCommandEnabled));
+        }
+
         public void Dispose()
         {
             if (_config.StartDockerCompose)
