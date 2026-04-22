@@ -44,6 +44,8 @@
         <InternalsVisibleTo Include="TimescaleBenchmark" />
         <InternalsVisibleTo Include="NBomber.Studio.WebAPI" />
         <InternalsVisibleTo Include="NBomber.Studio.Tests" />
+        <InternalsVisibleTo Include="NBomber.Cloud.WebAPI" />
+        <InternalsVisibleTo Include="NBomber.Cloud.Tests" />
     </ItemGroup>
 
 </Project>
