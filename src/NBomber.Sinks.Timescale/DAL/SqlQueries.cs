@@ -107,16 +107,16 @@ internal static class SqlQueries
 
     public static string AddSimulationNameColumn => $@"
         ALTER TABLE ""{TableNames.StepStatsTable}""
-        ADD {ColumnNames.SimulationName} TEXT;
+            ADD IF NOT EXISTS {ColumnNames.SimulationName} TEXT;
        ";
 
     public static string AddSessionResultColumn => $@"
         ALTER TABLE ""{TableNames.SessionsTable}""
-        ADD {ColumnNames.SessionResult} JSONB;
+            ADD IF NOT EXISTS {ColumnNames.SessionResult} JSONB;
        ";
 
     public static string AddArtifactsColumn => $@"
         ALTER TABLE ""{TableNames.SessionsTable}""
-        ADD {ColumnNames.Artifacts} BYTEA;
+            ADD IF NOT EXISTS {ColumnNames.Artifacts} BYTEA;
         ";
 }
