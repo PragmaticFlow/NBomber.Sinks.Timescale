@@ -17,17 +17,28 @@ namespace NBomber.Sinks.Timescale;
 /// <summary>
 /// Configuration class for the TimescaleDbSink.
 /// </summary>
-public class TimescaleDbSinkConfig(string connectionString, bool listenStopCommandEnabled = true)
+public class TimescaleDbSinkConfig
 {
+    /// <summary>Initializes a new instance with default values.</summary>
+    public TimescaleDbSinkConfig() { }
+
+    /// <summary>Initializes a new instance with the specified connection string and optional stop-command listener setting.</summary>
+    public TimescaleDbSinkConfig(string connectionString, bool listenStopCommandEnabled = true)
+    {
+        ConnectionString = connectionString;
+        ListenStopCommandEnabled = listenStopCommandEnabled;
+    }
+
     /// <summary>
     /// Gets or sets the connection string for TimescaleDB.
     /// </summary>
-    public string ConnectionString { get; set; } = connectionString;
+    public string ConnectionString { get; set; } = "";
 
     /// <summary>
     /// Indicates whether PostgreSQL session channel (LISTEN/NOTIFY) is enabled.
+    /// Defaults to true when absent from JSON configuration.
     /// </summary>
-    public bool ListenStopCommandEnabled { get; set; } = listenStopCommandEnabled;
+    public bool ListenStopCommandEnabled { get; set; } = true;
 }
 
 /// <summary>
@@ -387,7 +398,7 @@ public class TimescaleDbSink : IReportingSink
 
                     connection.Notification += (obj, e) =>
                     {
-                        _context.StopCurrentTest(reason: "");
+                        _context.StopCurrentTest(reason: "Received Stop command from TimescaleDB");
                     };
 
                     while (!_disposed)
