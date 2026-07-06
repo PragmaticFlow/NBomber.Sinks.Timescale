@@ -9,9 +9,7 @@
     <ItemGroup>
         <PackageReference Include="AutoBogus" Version="2.13.1" />
         <PackageReference Include="NBomber" Version="6.5.0" />
-        <PackageReference Include="Dapper" Version="2.1.35" />        
-        <PackageReference Include="RepoDb.PostgreSql" Version="1.13.1" />
-        <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.13.1" />
+        <PackageReference Include="Dapper" Version="2.1.35" />
     </ItemGroup>
 
     <ItemGroup>

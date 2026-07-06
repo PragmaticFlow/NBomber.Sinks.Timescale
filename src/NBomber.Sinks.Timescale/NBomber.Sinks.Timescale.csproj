@@ -33,10 +33,10 @@
     </ItemGroup>
     
     <ItemGroup>
-      <PackageReference Include="NBomber.Contracts" Version="6.2.1" />
-      <PackageReference Include="Npgsql" Version="9.0.4" />
-      <PackageReference Include="RepoDb.PostgreSql" Version="1.13.1" />
-      <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.13.1" />
+      <PackageReference Include="NBomber.Contracts" Version="6.2.1" />      
+      <PackageReference Include="RepoDb" Version="1.14.2" />      
+      <PackageReference Include="RepoDb.PostgreSql" Version="1.14.1" />
+      <PackageReference Include="RepoDb.PostgreSql.BulkOperations" Version="1.14.0" />
     </ItemGroup>    
 
     <ItemGroup>
