@@ -253,6 +253,7 @@ public class TimescaleDbSink : IReportingSink
         if (!_disposed)
         {
             _sessionChannelCTS.Cancel();
+            _sessionChannelCTS.Dispose();
             _dataSource?.Dispose();
             _disposed = true;
         }
