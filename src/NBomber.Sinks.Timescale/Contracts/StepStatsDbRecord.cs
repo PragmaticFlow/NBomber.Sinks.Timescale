@@ -15,6 +15,7 @@ internal class StepStatsDbRecord
     [Column(ColumnNames.Step)] public string Step { get; set; }
     [Column(ColumnNames.SortIndex)] public int SortIndex { get; set; }
     
+    [Obsolete]
     [Column(ColumnNames.AllReqCount)] public int AllReqCount { get; set; }
     [Column(ColumnNames.AllDataAll)] public long AllDataAll { get; set; }
     
