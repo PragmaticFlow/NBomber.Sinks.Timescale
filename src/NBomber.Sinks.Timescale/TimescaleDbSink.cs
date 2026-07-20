@@ -221,7 +221,6 @@ public class TimescaleDbSink : IReportingSink
 
         var queryEntity = new SessionInfoDbRecord
         {
-            SessionId = testInfo.SessionId,
             CurrentOperation = stats.NodeInfo.CurrentOperation,
             LastUpdatedTime = currentTime,
             SessionResult = JsonSerializer.Serialize(new SessionResult(stepsStats)),
@@ -234,7 +233,7 @@ public class TimescaleDbSink : IReportingSink
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
         await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
 
-        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult, e.NodeInfo, e.Artifacts });
+        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.CurrentOperation, e.LastUpdatedTime, e.SessionResult, e.Artifacts });
         await connection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
 
         await ts.CommitAsync();
