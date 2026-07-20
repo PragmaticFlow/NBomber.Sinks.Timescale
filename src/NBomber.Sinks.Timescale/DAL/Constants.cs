@@ -46,6 +46,7 @@ internal static class ColumnNames
     public const string OkDataMean = "ok_data_mean";
     public const string OkDataMax = "ok_data_max";
     public const string OkDataAll = "ok_data_all";
+    public const string OkBytesPerSecond = "ok_bytes_per_second";
     public const string OkDataP50 = "ok_data_p50";
     public const string OkDataP75 = "ok_data_p75";
     public const string OkDataP95 = "ok_data_p95";
@@ -67,6 +68,7 @@ internal static class ColumnNames
     public const string FailDataMean = "fail_data_mean";
     public const string FailDataMax = "fail_data_max";
     public const string FailDataAll = "fail_data_all";
+    public const string FailBytesPerSecond = "fail_bytes_per_second";
     public const string FailDataP50 = "fail_data_p50";
     public const string FailDataP75 = "fail_data_p75";
     public const string FailDataP95 = "fail_data_p95";

@@ -32,6 +32,7 @@ internal class StepStatsDbRecord
     [Column(ColumnNames.OkDataMin)] public long OkDataMin { get; set; }
     [Column(ColumnNames.OkDataMean)] public long OkDataMean { get; set; }
     [Column(ColumnNames.OkDataMax)] public long OkDataMax { get; set; }
+    [Column(ColumnNames.OkBytesPerSecond)] public double OkBytesPerSecond { get; set; }
     [Column(ColumnNames.OkDataAll)] public long OkDataAll { get; set; }
     [Column(ColumnNames.OkDataP50)] public long OkDataP50 { get; set; }
     [Column(ColumnNames.OkDataP75)] public long OkDataP75 { get; set; }
@@ -53,6 +54,7 @@ internal class StepStatsDbRecord
     [Column(ColumnNames.FailDataMin)] public long FailDataMin { get; set; }
     [Column(ColumnNames.FailDataMean)] public long FailDataMean { get; set; }
     [Column(ColumnNames.FailDataMax)] public long FailDataMax { get; set; }
+    [Column(ColumnNames.FailBytesPerSecond)] public double FailBytesPerSecond { get; set; }
     [Column(ColumnNames.FailDataAll)] public long FailDataAll { get; set; }
     [Column(ColumnNames.FailDataP50)] public long FailDataP50 { get; set; }
     [Column(ColumnNames.FailDataP75)] public long FailDataP75 { get; set; }
