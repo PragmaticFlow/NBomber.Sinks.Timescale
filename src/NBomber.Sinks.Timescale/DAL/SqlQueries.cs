@@ -119,4 +119,10 @@ internal static class SqlQueries
         ALTER TABLE ""{TableNames.SessionsTable}""
             ADD IF NOT EXISTS {ColumnNames.Artifacts} BYTEA;
         ";
+
+    public static string AddBytesPerSecondColumns => $@"
+        ALTER TABLE {TableNames.StepStatsTable}
+            ADD IF NOT EXISTS {ColumnNames.OkBytesPerSecond} DOUBLE PRECISION,
+            ADD IF NOT EXISTS {ColumnNames.FailBytesPerSecond} DOUBLE PRECISION;
+        ";
 }
