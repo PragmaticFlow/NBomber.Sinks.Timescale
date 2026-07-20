@@ -31,7 +31,8 @@ internal static class ColumnNames
     
     public const string AllReqCount = "all_req_count";
     public const string AllDataAll = "all_data_all";
-    
+
+    public const string TotalOkStepsRps = "total_ok_steps_rps";
     public const string OkReqCount = "ok_req_count";
     public const string OkReqRps = "ok_req_rps";
     public const string OkLatencyMax = "ok_latency_max";
@@ -53,7 +54,8 @@ internal static class ColumnNames
     public const string OkDataP99 = "ok_data_p99";
     public const string OkStatusCodes = "ok_status_codes";
     public const string OkLatencyCount = "ok_latency_count";
-    
+
+    public const string TotalFailStepsRps = "total_fail_steps_rps";
     public const string FailReqCount = "fail_req_count";
     public const string FailReqRps = "fail_req_rps";
     public const string FailLatencyMax = "fail_latency_max";

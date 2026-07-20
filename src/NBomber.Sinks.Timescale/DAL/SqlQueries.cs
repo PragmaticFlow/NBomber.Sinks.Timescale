@@ -125,4 +125,10 @@ internal static class SqlQueries
             ADD IF NOT EXISTS {ColumnNames.OkBytesPerSecond} DOUBLE PRECISION,
             ADD IF NOT EXISTS {ColumnNames.FailBytesPerSecond} DOUBLE PRECISION;
         ";
+
+    public static string AddTotalStepsRpsColumns => $@"
+        ALTER TABLE {TableNames.StepStatsTable}
+            ADD IF NOT EXISTS {ColumnNames.TotalOkStepsRps} DOUBLE PRECISION,
+            ADD IF NOT EXISTS {ColumnNames.TotalFailStepsRps} DOUBLE PRECISION;
+        "; 
 }
