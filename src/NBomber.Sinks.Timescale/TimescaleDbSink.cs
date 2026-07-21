@@ -303,8 +303,8 @@ public class TimescaleDbSink : IReportingSink
     private StepStatsDbRecord[] MapStepToDbRecord(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
     {
         var testInfo = _context.TestInfo;
-
-        return scnStats.StepStats
+        
+        var stats = scnStats.StepStats
             .Select(step =>
             {
                 // clear status code message for Bombing
@@ -330,6 +330,7 @@ public class TimescaleDbSink : IReportingSink
 
                 AllReqCount = step.Ok.Request.Count + step.Fail.Request.Count,
                 AllDataAll = step.Ok.DataTransfer.AllBytes + step.Fail.DataTransfer.AllBytes,
+
                 OkReqCount = step.Ok.Request.Count,
                 OkReqRps = step.Ok.Request.RPS,
                 OkLatencyMin = step.Ok.Latency.MinMs,
@@ -377,7 +378,16 @@ public class TimescaleDbSink : IReportingSink
                 SimulationName = scnStats.LoadSimulationStats.SimulationName,
                 SimulationValue = scnStats.LoadSimulationStats.Value
             })
-            .ToArray();
+            .ToArray();        
+
+        var globalInfo = stats.FirstOrDefault(x => x.Step == "global information");
+        if (globalInfo != null)
+        {
+            globalInfo.TotalOkStepsRps = scnStats.TotalOkStepsRPS;
+            globalInfo.TotalFailStepsRPS = scnStats.TotalFailStepsRPS;
+        }
+
+        return stats;
     }
 
     private string GetListenStopCommandChannelName()
