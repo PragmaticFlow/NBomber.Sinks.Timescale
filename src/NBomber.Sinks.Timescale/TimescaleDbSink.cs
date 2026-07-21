@@ -303,8 +303,7 @@ public class TimescaleDbSink : IReportingSink
     private StepStatsDbRecord[] MapStepToDbRecord(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
     {
         var testInfo = _context.TestInfo;
-
-        #region mapping
+        
         var stats = scnStats.StepStats
             .Select(step =>
             {
@@ -379,9 +378,7 @@ public class TimescaleDbSink : IReportingSink
                 SimulationName = scnStats.LoadSimulationStats.SimulationName,
                 SimulationValue = scnStats.LoadSimulationStats.Value
             })
-            .ToArray();
-
-        #endregion
+            .ToArray();        
 
         var globalInfo = stats.FirstOrDefault(x => x.Step == "global information");
         if (globalInfo != null)
