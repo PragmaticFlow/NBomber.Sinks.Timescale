@@ -15,7 +15,7 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
         if (currentDbVersion > SinkSchemaVersion)
         {
             var errMessage = $"NBomber.Sinks.Timescale: Your sink's schema version: '{SinkSchemaVersion}' is older than schema version in your database: '{currentDbVersion}'";
-            logger.Error(errMessage);
+            logger.Warning(errMessage);
         }
         else if (currentDbVersion < SinkSchemaVersion) 
         {

@@ -47,7 +47,7 @@ namespace NBomber.Sinks.Timescale.Tests
                 .WithLoggerConfig(() => new LoggerConfiguration().WriteTo.Sink(logger))
                 .Run();
 
-            var containsSinkError = logEvents.Where(x => x.Level == LogEventLevel.Error)
+            var containsSinkError = logEvents.Where(x => x.Level == LogEventLevel.Warning)
                 .Any(x => x.RenderMessage().Contains("is older than schema version in your database"));
 
             Assert.True(containsSinkError);
