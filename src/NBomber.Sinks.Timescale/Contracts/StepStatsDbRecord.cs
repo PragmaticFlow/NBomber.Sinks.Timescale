@@ -19,7 +19,6 @@ internal class StepStatsDbRecord
     [Column(ColumnNames.AllReqCount)] public int AllReqCount { get; set; }
     [Column(ColumnNames.AllDataAll)] public long AllDataAll { get; set; }
     
-    [Column(ColumnNames.TotalOkStepsRps)] public double? TotalOkStepsRps { get; set; }
     [Column(ColumnNames.OkReqCount)] public int OkReqCount { get; set; }
     [Column(ColumnNames.OkReqRps)] public double OkReqRps { get; set; }
     [Column(ColumnNames.OkLatencyMax)] public double OkLatencyMax { get; set; }
@@ -42,7 +41,6 @@ internal class StepStatsDbRecord
     [Column(ColumnNames.OkStatusCodes)] public string OkStatusCodes { get; set; }
     [Column(ColumnNames.OkLatencyCount)] public string OkLatencyCount { get; set; }
     
-    [Column(ColumnNames.TotalFailStepsRps)] public double? TotalFailStepsRPS { get; set; }
     [Column(ColumnNames.FailReqCount)] public int FailReqCount { get; set; }
     [Column(ColumnNames.FailReqRps)] public double FailReqRps { get; set; }
     [Column(ColumnNames.FailLatencyMax)] public double FailLatencyMax { get; set; }

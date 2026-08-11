@@ -304,7 +304,7 @@ public class TimescaleDbSink : IReportingSink
     {
         var testInfo = _context.TestInfo;
         
-        var stats = scnStats.StepStats
+        return scnStats.StepStats
             .Select(step =>
             {
                 // clear status code message for Bombing
@@ -378,16 +378,7 @@ public class TimescaleDbSink : IReportingSink
                 SimulationName = scnStats.LoadSimulationStats.SimulationName,
                 SimulationValue = scnStats.LoadSimulationStats.Value
             })
-            .ToArray();        
-
-        var globalInfo = stats.FirstOrDefault(x => x.Step == "global information");
-        if (globalInfo != null)
-        {
-            globalInfo.TotalOkStepsRps = scnStats.TotalOkStepsRPS;
-            globalInfo.TotalFailStepsRPS = scnStats.TotalFailStepsRPS;
-        }
-
-        return stats;
+            .ToArray();
     }
 
     private string GetListenStopCommandChannelName()

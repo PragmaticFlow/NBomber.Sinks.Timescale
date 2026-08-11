@@ -96,8 +96,7 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                     break;
 
                 case 6:
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddBytesPerSecondColumns);                    
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddTotalStepsRpsColumns);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddBytesPerSecondColumns);
                     break;
             }
             
