@@ -261,7 +261,7 @@ public class TimescaleDbSink : IReportingSink
 
     private ScenarioStats AddGlobalInfoStep(ScenarioStats scnStats)
     {
-        var globalStepInfo = new StepStats("global information", scnStats.Ok, scnStats.Fail, 0);
+        var globalStepInfo = new StepStats("global information", scnStats.Ok, scnStats.Fail, scnStats.SortIndex);
         scnStats.StepStats = scnStats.StepStats.Append(globalStepInfo).ToArray();
 
         return scnStats;
