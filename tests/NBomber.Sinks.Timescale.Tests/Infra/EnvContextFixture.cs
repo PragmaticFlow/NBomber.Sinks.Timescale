@@ -1,72 +1,47 @@
 ﻿#pragma warning disable CS8602, CS8618
-using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Services;
 using Npgsql;
+using RepoDb;
 using System.Text.Json;
 
-namespace NBomber.Sinks.Timescale.Tests.Infra
+namespace NBomber.Sinks.Timescale.Tests.Infra;
+
+public class EnvContextFixture
 {
-    public class EnvContextFixture : IDisposable
+    private readonly Config? _config;
+
+    public TestHelper TestHelper {  get; private set; }
+
+    public EnvContextFixture()
     {
-        private readonly Config? _config;
-        private readonly ICompositeService _docker;
+        _config = JsonSerializer.Deserialize<Config>(json: File.ReadAllText("config.json"));
 
-        public TestHelper TestHelper {  get; private set; }
+        var dataSourceBuilder = new NpgsqlDataSourceBuilder(_config.DBSettings.ConnectionString);
+        var dataSource = dataSourceBuilder.Build();
 
-        public EnvContextFixture()
-        {
-            _config = JsonSerializer.Deserialize<Config>(json: File.ReadAllText("config.json"));
+        HealthCheck.WaitUntilReady(dataSource).Wait();
 
-            if (_config.StartDockerCompose)
-            {
-                var dockerCompose = "docker-compose.yml";
+        PropertyHandlerMapper.Add<TimeSpan, TimeSpanPropertyHandler>(force: true);
 
-                _docker = new Builder()
-                    .UseContainer()
-                    .UseCompose()
-                    .FromFile(dockerCompose)
-                    .RemoveOrphans()
-                    .Build();
-
-                _docker.Start();
-            }
-
-            var dataSourceBuilder = new NpgsqlDataSourceBuilder(_config.DBSettings.ConnectionString);
-            var dataSource = dataSourceBuilder.Build();
-
-            HealthCheck.WaitUntilReady(dataSource).Wait();
-
-            TestHelper = new TestHelper(dataSource);
-        }
-
-        public TimescaleDbSink CreateTimescaleDbSinkInstance()
-        {
-            return new TimescaleDbSink(new TimescaleDbSinkConfig(_config.DBSettings.ConnectionString));
-        }
-
-        public TimescaleDbSink CreateTimescaleDbSinkInstance(bool listenStopCommandEnabled = true)
-        {
-            return new TimescaleDbSink(new TimescaleDbSinkConfig(_config.DBSettings.ConnectionString, listenStopCommandEnabled));
-        }
-
-        public void Dispose()
-        {
-            if (_config.StartDockerCompose)
-            {
-                _docker.Stop();
-                _docker.Dispose();
-            }
-        }
+        TestHelper = new TestHelper(dataSource);
     }
 
-    public class Config
+    public TimescaleDbSink CreateTimescaleDbSinkInstance()
     {
-        public bool StartDockerCompose { get; set; }
-        public DBSettings DBSettings { get; set; }
+        return new TimescaleDbSink(new TimescaleDbSinkConfig(_config.DBSettings.ConnectionString));
     }
 
-    public class DBSettings
+    public TimescaleDbSink CreateTimescaleDbSinkInstance(bool listenStopCommandEnabled = true)
     {
-        public string ConnectionString { get; set; }
+        return new TimescaleDbSink(new TimescaleDbSinkConfig(_config.DBSettings.ConnectionString, listenStopCommandEnabled));
     }
+}
+
+public class Config
+{
+    public DBSettings DBSettings { get; set; }
+}
+
+public class DBSettings
+{
+    public string ConnectionString { get; set; }
 }
