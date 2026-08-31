@@ -50,6 +50,7 @@ public class TimescaleDbSink : IReportingSink
     private IBaseContext _context;
     private NpgsqlDataSource _dataSource;
     private TimescaleDbSinkConfig _config = new("");
+    private string _projectId = "-1";
     private bool _disposed = false;
     private CancellationTokenSource _sessionChannelCTS = new();
 
@@ -92,6 +93,8 @@ public class TimescaleDbSink : IReportingSink
     {
         _logger = context.Logger.ForContext<TimescaleDbSink>();
         _context = context;
+
+        _projectId = ParseProjectId(_context.TestInfo.ProjectId);
 
         var config = infraConfig?.GetSection("TimescaleDbSink").Get<TimescaleDbSinkConfig>();
         if (config != null)
@@ -146,6 +149,7 @@ public class TimescaleDbSink : IReportingSink
                     Time = startTime,
                     LastUpdatedTime = startTime,
                     SessionId = testInfo.SessionId,
+                    ProjectId = _projectId,
                     CurrentOperation = OperationType.Bombing,
                     TestSuite = testInfo.TestSuite,
                     TestName = testInfo.TestName,
@@ -466,5 +470,13 @@ public class TimescaleDbSink : IReportingSink
         }
 
         return memoryStream.ToArray();
+    }
+
+    internal string ParseProjectId(string projectId)
+    {
+        if (string.IsNullOrWhiteSpace(projectId))
+            return "-1";
+
+        return projectId;
     }
 }

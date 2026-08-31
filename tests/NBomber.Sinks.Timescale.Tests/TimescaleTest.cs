@@ -342,6 +342,18 @@ public class TimescaleTest(EnvContextFixture fixture) : IClassFixture<EnvContext
             SortIndexOf(stepStats, scnStats.ScenarioName, GlobalInformationStep)
                 .ShouldBe(scnStats.SortIndex);
         }
+        
+    }
+
+    [Theory]
+    [InlineData("1001", "1001")]              // valid project id is parsed
+    [InlineData("", "-1")]                    // empty project id falls back to -1
+    [InlineData(" ", "-1")]
+    public void ParseProjectId_Should_Parse_Value(string projectId, string? expectedProjectId)
+    {
+        var sink = fixture.CreateTimescaleDbSinkInstance();
+
+        sink.ParseProjectId(projectId).ShouldBe(expectedProjectId);
     }
 
     private static ScenarioProps CreateUserFlowScenario(string scenarioName)
