@@ -125,4 +125,11 @@ internal static class SqlQueries
             ADD IF NOT EXISTS {ColumnNames.OkBytesPerSecond} DOUBLE PRECISION,
             ADD IF NOT EXISTS {ColumnNames.FailBytesPerSecond} DOUBLE PRECISION;
         ";
+
+    public static string AddProjectIdColumn => $@"
+        ALTER TABLE {TableNames.SessionsTable}
+            ADD IF NOT EXISTS {ColumnNames.ProjectId} TEXT;
+        
+        CREATE INDEX IF NOT EXISTS idx_nb_sessions_project_id ON {TableNames.SessionsTable}({ColumnNames.ProjectId});
+        ";
 }
