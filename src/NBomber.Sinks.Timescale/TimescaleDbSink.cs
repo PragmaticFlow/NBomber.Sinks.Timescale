@@ -220,7 +220,7 @@ public class TimescaleDbSink : IReportingSink
             .ToArray();
 
         var artifacts = stats.ReportFiles.Length > 0
-            ? ZipArtifacts(Path.GetDirectoryName(stats.ReportFiles.First().FilePath))
+            ? ZipArtifacts(Path.GetDirectoryName(stats.ReportFiles.First().FilePath)!)
             : [];
 
         var queryEntity = new SessionInfoDbRecord

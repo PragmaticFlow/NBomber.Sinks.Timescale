@@ -10,15 +10,17 @@ internal class SessionInfoDbRecord
 {
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }
     [Column(ColumnNames.LastUpdatedTime)] public DateTime LastUpdatedTime { get; set; }
-    [Column(ColumnNames.SessionId)] public string SessionId { get; set; }
-    [Column(ColumnNames.ProjectId)] public string ProjectId { get; set; }
+    [Column(ColumnNames.SessionId)] public string SessionId { get; set; } = "";
+    [Column(ColumnNames.ProjectId)] public string ProjectId { get; set; } = "";
     [Column(ColumnNames.CurrentOperation)] public OperationType CurrentOperation { get; set; }
-    [Column(ColumnNames.TestSuite)] public string TestSuite { get; set; }
-    [Column(ColumnNames.TestName)] public string TestName { get; set; }
-    [Column(ColumnNames.Metadata)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string Metadata { get; set; }
-    [Column(ColumnNames.NodeInfo)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string NodeInfo { get; set; }
-    [Column(ColumnNames.SessionResult)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string SessionResult { get; set; }
-    [Column(ColumnNames.Artifacts)][NpgsqlDbType(NpgsqlDbType.Bytea)] public byte[] Artifacts { get; set;  }
+    [Column(ColumnNames.TestSuite)] public string TestSuite { get; set; } = "";
+    [Column(ColumnNames.TestName)] public string TestName { get; set; } = "";
+    
+    // JSONB columns must stay null when they are not set: an empty string is not valid JSON
+    [Column(ColumnNames.Metadata)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string? Metadata { get; set; }
+    [Column(ColumnNames.NodeInfo)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string? NodeInfo { get; set; }
+    [Column(ColumnNames.SessionResult)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string? SessionResult { get; set; }
+    [Column(ColumnNames.Artifacts)][NpgsqlDbType(NpgsqlDbType.Bytea)] public byte[]? Artifacts { get; set;  }
 }
 
 internal class SessionResult(StepStatsDbRecord[] stepStats)

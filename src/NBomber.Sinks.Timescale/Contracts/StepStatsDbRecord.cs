@@ -8,11 +8,11 @@ internal class StepStatsDbRecord
 {
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }
     [Column(ColumnNames.ScenarioTimestamp)] public TimeSpan ScenarioTimestamp { get; set; }
-    [Column(ColumnNames.SessionId)] public string SessionId { get; set; }
+    [Column(ColumnNames.SessionId)] public string SessionId { get; set; } = "";
     [Column(ColumnNames.CurrentOperation)] public OperationType CurrentOperation { get; set; }
 
-    [Column(ColumnNames.Scenario)] public string Scenario { get; set; }
-    [Column(ColumnNames.Step)] public string Step { get; set; }
+    [Column(ColumnNames.Scenario)] public string Scenario { get; set; } = "";
+    [Column(ColumnNames.Step)] public string Step { get; set; } = "";
     [Column(ColumnNames.SortIndex)] public int SortIndex { get; set; }
     
     [Obsolete]
@@ -38,8 +38,10 @@ internal class StepStatsDbRecord
     [Column(ColumnNames.OkDataP75)] public long OkDataP75 { get; set; }
     [Column(ColumnNames.OkDataP95)] public long OkDataP95 { get; set; }
     [Column(ColumnNames.OkDataP99)] public long OkDataP99 { get; set; }
-    [Column(ColumnNames.OkStatusCodes)] public string OkStatusCodes { get; set; }
-    [Column(ColumnNames.OkLatencyCount)] public string OkLatencyCount { get; set; }
+    
+    // JSONB columns must stay null when they are not set: an empty string is not valid JSON
+    [Column(ColumnNames.OkStatusCodes)] public string? OkStatusCodes { get; set; }
+    [Column(ColumnNames.OkLatencyCount)] public string? OkLatencyCount { get; set; }
     
     [Column(ColumnNames.FailReqCount)] public int FailReqCount { get; set; }
     [Column(ColumnNames.FailReqRps)] public double FailReqRps { get; set; }
@@ -60,9 +62,11 @@ internal class StepStatsDbRecord
     [Column(ColumnNames.FailDataP75)] public long FailDataP75 { get; set; }
     [Column(ColumnNames.FailDataP95)] public long FailDataP95 { get; set; }
     [Column(ColumnNames.FailDataP99)] public long FailDataP99 { get; set; }
-    [Column(ColumnNames.FailStatusCodes)] public string FailStatusCodes { get; set; }
-    [Column(ColumnNames.FailLatencyCount)] public string FailLatencyCount { get; set; }
+    
+    // JSONB columns must stay null when they are not set: an empty string is not valid JSON
+    [Column(ColumnNames.FailStatusCodes)] public string? FailStatusCodes { get; set; }
+    [Column(ColumnNames.FailLatencyCount)] public string? FailLatencyCount { get; set; }
  
-    [Column(ColumnNames.SimulationName)] public string SimulationName { get; set; }
+    [Column(ColumnNames.SimulationName)] public string SimulationName { get; set; } = "";
     [Column(ColumnNames.SimulationValue)] public int SimulationValue { get; set; }
 }
