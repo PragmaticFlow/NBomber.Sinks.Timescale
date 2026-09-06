@@ -50,7 +50,7 @@ public class TimescaleDbSink : IReportingSink
     private IBaseContext _context;
     private NpgsqlDataSource _dataSource;
     private TimescaleDbSinkConfig _config = new("");
-    private string _projectId = "-1";
+    private string _projectId = "";
     private bool _disposed = false;
     private CancellationTokenSource _sessionChannelCTS = new();
 
@@ -475,7 +475,7 @@ public class TimescaleDbSink : IReportingSink
     internal string ParseProjectId(string projectId)
     {
         if (string.IsNullOrWhiteSpace(projectId))
-            return "-1";
+            return "";
 
         return projectId;
     }

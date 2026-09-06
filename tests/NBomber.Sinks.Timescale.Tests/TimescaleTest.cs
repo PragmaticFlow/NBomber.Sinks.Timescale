@@ -347,8 +347,8 @@ public class TimescaleTest(EnvContextFixture fixture) : IClassFixture<EnvContext
 
     [Theory]
     [InlineData("1001", "1001")]              // valid project id is parsed
-    [InlineData("", "-1")]                    // empty project id falls back to -1
-    [InlineData(" ", "-1")]
+    [InlineData("", "")]                    // empty project id falls back to -1
+    [InlineData(" ", "")]
     public void ParseProjectId_Should_Parse_Value(string projectId, string? expectedProjectId)
     {
         var sink = fixture.CreateTimescaleDbSinkInstance();
