@@ -52,6 +52,7 @@ public class TimescaleDbSink : IReportingSink
     private TimescaleDbSinkConfig _config = new("");
     private string _projectId = "";
     private bool _disposed = false;
+    private bool _scenarioTagsSaved = false;
     private CancellationTokenSource _sessionChannelCTS = new();
 
     internal static readonly string StopSessionChannelName = "nbomber_stop_session";
@@ -154,6 +155,7 @@ public class TimescaleDbSink : IReportingSink
                     TestSuite = testInfo.TestSuite,
                     TestName = testInfo.TestName,
                     Metadata = Json.serialize(sessionInfo),
+                    Tags = JsonSerializer.Serialize(new SessionTagsDbRecord { Global = testInfo.Tags }),
                     NodeInfo = Json.serialize(nodeInfo)
                 };
 
@@ -186,6 +188,9 @@ public class TimescaleDbSink : IReportingSink
 
         await using var connection = await _dataSource.OpenConnectionAsync();
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
+
+        if (!_scenarioTagsSaved)
+            await SaveScenarioTags(connection, stats);
     }
 
     /// <summary>
@@ -234,6 +239,9 @@ public class TimescaleDbSink : IReportingSink
 
         await using var connection = await _dataSource.OpenConnectionAsync();
         await using var ts = await connection.BeginTransactionAsync();
+
+        if (!_scenarioTagsSaved)
+            await SaveScenarioTags(connection, stats.ScenarioStats, ts);
 
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
         await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
@@ -470,6 +478,61 @@ public class TimescaleDbSink : IReportingSink
         }
 
         return memoryStream.ToArray();
+    }
+
+    private async Task SaveScenarioTags(NpgsqlConnection connection, ScenarioStats[] stats, NpgsqlTransaction? transaction = null)
+    {
+        if (!_context.GetNodeInfo().NodeType.IsAgent)
+        {
+            var globalTags = _context.TestInfo.Tags;
+
+            var scenarios = stats
+                .Select(scn => new ScenarioTagsDbRecord
+                {
+                    Name = scn.ScenarioName,
+                    Tags = scn.Tags
+                        .Where(t => !globalTags.TryGetValue(t.Key, out var value) || value != t.Value)
+                        .ToDictionary(t => t.Key, t => t.Value)
+                })
+                .Where(scn => scn.Tags.Count > 0)
+                .ToArray();
+
+            var record = new SessionInfoDbRecord
+            {
+                SessionId = _context.TestInfo.SessionId,
+                Tags = JsonSerializer.Serialize(new SessionTagsDbRecord { Global = globalTags, Scenarios = scenarios })
+            };
+
+            var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.SessionId, e.Tags });
+            await connection.UpdateAsync(TableNames.SessionsTable, record, fields: fields, transaction: transaction!);
+
+            var tagKeys = globalTags.Keys.Concat(scenarios.SelectMany(scn => scn.Tags.Keys)).Distinct().ToArray();
+            await SaveTagKeys(connection, tagKeys, transaction);
+        }
+
+        _scenarioTagsSaved = true;
+    }
+
+    private async Task SaveTagKeys(NpgsqlConnection connection, string[] tagKeys, NpgsqlTransaction? transaction = null)
+    {
+        if (tagKeys.Length == 0)
+            return;
+
+        var parameters = new Dictionary<string, object> { ["ProjectId"] = _projectId };
+        var rows = new List<string>();
+
+        for (var i = 0; i < tagKeys.Length; i++)
+        {
+            parameters[$"TagKey{i}"] = tagKeys[i];
+            rows.Add($"(@ProjectId, @TagKey{i})");
+        }
+
+        await connection.ExecuteNonQueryAsync($@"
+            INSERT INTO {TableNames.SessionTagKeysTable} ({ColumnNames.ProjectId}, {ColumnNames.TagKey})
+            VALUES {string.Join(", ", rows)}
+            ON CONFLICT DO NOTHING",
+            parameters,
+            transaction: transaction!);
     }
 
     internal string ParseProjectId(string projectId)

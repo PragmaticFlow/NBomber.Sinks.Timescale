@@ -132,4 +132,19 @@ internal static class SqlQueries
         
         CREATE INDEX IF NOT EXISTS idx_nb_sessions_project_id ON {TableNames.SessionsTable}({ColumnNames.ProjectId});
         ";
+
+    public static string AddTagsColumn => $@"
+        ALTER TABLE {TableNames.SessionsTable}
+            ADD IF NOT EXISTS {ColumnNames.Tags} JSONB;
+        ";
+
+    public static string CreateSessionTagKeysTable => $@"
+        CREATE TABLE IF NOT EXISTS {TableNames.SessionTagKeysTable}
+        (
+            {ColumnNames.ProjectId} TEXT NOT NULL,
+            {ColumnNames.TagKey}    TEXT NOT NULL,
+
+            CONSTRAINT pk_nb_session_tag_keys PRIMARY KEY ({ColumnNames.ProjectId}, {ColumnNames.TagKey})
+        );
+        ";
 }
