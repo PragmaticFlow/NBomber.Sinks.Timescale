@@ -5,6 +5,7 @@ internal static class TableNames
     public const string StepStatsTable = "nb_step_stats";
     public const string MetricsTable = "nb_metrics";
     public const string SessionsTable = "nb_sessions";
+    public const string SessionTagKeysTable = "nb_session_tag_keys";
     public const string SchemaVersionTable = "nb_sink_schema_version";
 }
 
@@ -16,6 +17,8 @@ internal static class ColumnNames
     public const string ProjectId = "project_id";
     public const string CurrentOperation = "current_operation";
     public const string Metadata = "metadata";
+    public const string Tags = "tags";
+    public const string TagKey = "tag_key";
     
     public const string NodeInfo = "node_info";
     public const string TestSuite = "test_suite";

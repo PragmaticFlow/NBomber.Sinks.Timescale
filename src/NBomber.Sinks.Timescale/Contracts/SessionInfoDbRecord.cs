@@ -18,6 +18,7 @@ internal class SessionInfoDbRecord
     
     // JSONB columns must stay null when they are not set: an empty string is not valid JSON
     [Column(ColumnNames.Metadata)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string? Metadata { get; set; }
+    [Column(ColumnNames.Tags)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string? Tags { get; set; }
     [Column(ColumnNames.NodeInfo)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string? NodeInfo { get; set; }
     [Column(ColumnNames.SessionResult)][NpgsqlDbType(NpgsqlDbType.Jsonb)] public string? SessionResult { get; set; }
     [Column(ColumnNames.Artifacts)][NpgsqlDbType(NpgsqlDbType.Bytea)] public byte[]? Artifacts { get; set;  }
