@@ -481,34 +481,31 @@ public class TimescaleDbSink : IReportingSink
     }
 
     private async Task SaveScenarioTags(NpgsqlConnection connection, ScenarioStats[] stats, NpgsqlTransaction? transaction = null)
-    {
-        if (!_context.GetNodeInfo().NodeType.IsAgent)
-        {
-            var globalTags = _context.TestInfo.Tags;
+    {   
+        var globalTags = _context.TestInfo.Tags;
 
-            var scenarios = stats
-                .Select(scn => new ScenarioTagsDbRecord
-                {
-                    Name = scn.ScenarioName,
-                    Tags = scn.Tags
-                        .Where(t => !globalTags.TryGetValue(t.Key, out var value) || value != t.Value)
-                        .ToDictionary(t => t.Key, t => t.Value)
-                })
-                .Where(scn => scn.Tags.Count > 0)
-                .ToArray();
-
-            var record = new SessionInfoDbRecord
+        var scenarios = stats
+            .Select(scn => new ScenarioTagsDbRecord
             {
-                SessionId = _context.TestInfo.SessionId,
-                Tags = JsonSerializer.Serialize(new SessionTagsDbRecord { Global = globalTags, Scenarios = scenarios })
-            };
+                Name = scn.ScenarioName,
+                Tags = scn.Tags
+                    .Where(t => !globalTags.TryGetValue(t.Key, out var value) || value != t.Value)
+                    .ToDictionary(t => t.Key, t => t.Value)
+            })
+            .Where(scn => scn.Tags.Count > 0)
+            .ToArray();
 
-            var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.SessionId, e.Tags });
-            await connection.UpdateAsync(TableNames.SessionsTable, record, fields: fields, transaction: transaction!);
+        var record = new SessionInfoDbRecord
+        {
+            SessionId = _context.TestInfo.SessionId,
+            Tags = JsonSerializer.Serialize(new SessionTagsDbRecord { Global = globalTags, Scenarios = scenarios })
+        };
 
-            var tagKeys = globalTags.Keys.Concat(scenarios.SelectMany(scn => scn.Tags.Keys)).Distinct().ToArray();
-            await SaveTagKeys(connection, tagKeys, transaction);
-        }
+        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.SessionId, e.Tags });
+        await connection.UpdateAsync(TableNames.SessionsTable, record, fields: fields, transaction: transaction!);
+
+        var tagKeys = globalTags.Keys.Concat(scenarios.SelectMany(scn => scn.Tags.Keys)).Distinct().ToArray();
+        await SaveTagKeys(connection, tagKeys, transaction);        
 
         _scenarioTagsSaved = true;
     }
