@@ -13,10 +13,8 @@ public class TestHelper(NpgsqlDataSource dataSource)
     {
         await using var connection = await dataSource.OpenConnectionAsync();
 
-        await connection.ExecuteNonQueryAsync(
-                    SqlQueries.CreateStepStatsTable
-                  + SqlQueries.CreateSessionsTable
-                  + SqlQueries.CreateDbSchemaVersion);
+        var migrations = new DbMigrations(connection, Serilog.Core.Logger.None);
+        await migrations.Run();
     }
 
     public async Task SetDbSchemaVersion(int version)
@@ -24,9 +22,9 @@ public class TestHelper(NpgsqlDataSource dataSource)
         await using var connection = await dataSource.OpenConnectionAsync();
 
         await connection.ExecuteNonQueryAsync($@"
-                            INSERT INTO {TableNames.SchemaVersionTable} (""{ColumnNames.Version}"")
-                            VALUES ({version})
-                            ;");
+            UPDATE {TableNames.SchemaVersionTable}
+            SET ""{ColumnNames.Version}"" = {version}
+            ;");
     }
 
     public async Task DeleteTables()
@@ -37,7 +35,8 @@ public class TestHelper(NpgsqlDataSource dataSource)
             (@$"DROP TABLE IF EXISTS {TableNames.SchemaVersionTable}; 
                     DROP TABLE IF EXISTS {TableNames.SessionsTable};
                     DROP TABLE IF EXISTS {TableNames.StepStatsTable};
-                    DROP TABLE IF EXISTS {TableNames.MetricsTable};");
+                    DROP TABLE IF EXISTS {TableNames.MetricsTable};
+                    DROP TABLE IF EXISTS {TableNames.SessionTagKeysTable}");
     }
 
     public async Task NotifyStopSession(string sessionId)

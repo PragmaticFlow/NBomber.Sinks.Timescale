@@ -52,7 +52,6 @@ public class TimescaleDbSink : IReportingSink
     private TimescaleDbSinkConfig _config = new("");
     private string _projectId = "";
     private bool _disposed = false;
-    private bool _scenarioTagsSaved = false;
     private CancellationTokenSource _sessionChannelCTS = new();
 
     internal static readonly string StopSessionChannelName = "nbomber_stop_session";
@@ -145,6 +144,9 @@ public class TimescaleDbSink : IReportingSink
 
             if (!nodeInfo.NodeType.IsAgent)
             {
+                var scenariosTags = GetScenariosTags(sessionInfo);
+                var sessionTags = new SessionTagsDbRecord { Global = testInfo.Tags.ToDictionary(), Scenarios = scenariosTags };
+
                 var record = new SessionInfoDbRecord
                 {
                     Time = startTime,
@@ -154,15 +156,23 @@ public class TimescaleDbSink : IReportingSink
                     CurrentOperation = OperationType.Bombing,
                     TestSuite = testInfo.TestSuite,
                     TestName = testInfo.TestName,
-                    Metadata = Json.serialize(sessionInfo),
-                    Tags = JsonSerializer.Serialize(new SessionTagsDbRecord { Global = testInfo.Tags }),
-                    NodeInfo = Json.serialize(nodeInfo)
+                    Tags = JsonSerializer.Serialize(sessionTags),
+                    NodeInfo = Json.serialize(nodeInfo),
+                    Metadata = JsonSerializer.Serialize(new
+                    {
+                        Scenarios = sessionInfo.Scenarios.Select(scn => new { scn.ScenarioName, scn.SortIndex })
+                    }),
                 };
 
                 try
                 {
                     await using var connection = await _dataSource.OpenConnectionAsync();
-                    var res = await connection.InsertAsync(TableNames.SessionsTable, record);
+                    await using var transaction = await connection.BeginTransactionAsync();
+
+                    await connection.InsertAsync(TableNames.SessionsTable, record, transaction: transaction);
+                    await SaveTagKeys(connection, sessionTags, transaction);
+
+                    await transaction.CommitAsync();
                 }
                 catch (Exception ex)
                 {
@@ -188,9 +198,6 @@ public class TimescaleDbSink : IReportingSink
 
         await using var connection = await _dataSource.OpenConnectionAsync();
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
-
-        if (!_scenarioTagsSaved)
-            await SaveScenarioTags(connection, stats);
     }
 
     /// <summary>
@@ -239,9 +246,6 @@ public class TimescaleDbSink : IReportingSink
 
         await using var connection = await _dataSource.OpenConnectionAsync();
         await using var ts = await connection.BeginTransactionAsync();
-
-        if (!_scenarioTagsSaved)
-            await SaveScenarioTags(connection, stats.ScenarioStats, ts);
 
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
         await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
@@ -480,38 +484,18 @@ public class TimescaleDbSink : IReportingSink
         return memoryStream.ToArray();
     }
 
-    private async Task SaveScenarioTags(NpgsqlConnection connection, ScenarioStats[] stats, NpgsqlTransaction? transaction = null)
-    {   
-        var globalTags = _context.TestInfo.Tags;
-
-        var scenarios = stats
-            .Select(scn => new ScenarioTagsDbRecord
-            {
-                Name = scn.ScenarioName,
-                Tags = scn.Tags
-                    .Where(t => !globalTags.TryGetValue(t.Key, out var value) || value != t.Value)
-                    .ToDictionary(t => t.Key, t => t.Value)
-            })
+    private static ScenarioTagsDbRecord[] GetScenariosTags(SessionStartInfo sessionInfo)
+    {
+        return sessionInfo.Scenarios
             .Where(scn => scn.Tags.Count > 0)
+            .Select(scn => new ScenarioTagsDbRecord { Name = scn.ScenarioName, Tags = scn.Tags.ToDictionary() })
             .ToArray();
-
-        var record = new SessionInfoDbRecord
-        {
-            SessionId = _context.TestInfo.SessionId,
-            Tags = JsonSerializer.Serialize(new SessionTagsDbRecord { Global = globalTags, Scenarios = scenarios })
-        };
-
-        var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.SessionId, e.Tags });
-        await connection.UpdateAsync(TableNames.SessionsTable, record, fields: fields, transaction: transaction!);
-
-        var tagKeys = globalTags.Keys.Concat(scenarios.SelectMany(scn => scn.Tags.Keys)).Distinct().ToArray();
-        await SaveTagKeys(connection, tagKeys, transaction);        
-
-        _scenarioTagsSaved = true;
     }
 
-    private async Task SaveTagKeys(NpgsqlConnection connection, string[] tagKeys, NpgsqlTransaction? transaction = null)
+    private async Task SaveTagKeys(NpgsqlConnection connection, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction? transaction = null)
     {
+        var tagKeys = tagsDbRecord.Global.Keys.Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags.Keys)).Distinct().ToArray();
+
         if (tagKeys.Length == 0)
             return;
 

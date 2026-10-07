@@ -11,5 +11,5 @@ internal class SessionTagsDbRecord
 internal class ScenarioTagsDbRecord
 {
     [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("tags")] public Dictionary<string, string> Tags { get; set; } = [];
+    [JsonPropertyName("tags")] public IReadOnlyDictionary<string, string> Tags { get; set; } = new Dictionary<string, string>();
 }
