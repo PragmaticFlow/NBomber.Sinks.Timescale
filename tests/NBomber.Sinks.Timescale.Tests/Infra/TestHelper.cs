@@ -78,6 +78,15 @@ public class TestHelper(NpgsqlDataSource dataSource)
         }
     }
 
+    public async Task<string[]> GetTagKeys()
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+
+        var result = await connection.ExecuteQueryAsync<string>($"SELECT {ColumnNames.TagKey} FROM {TableNames.SessionTagKeysTable}");
+
+        return result.ToArray();
+    }
+
     internal async Task<StepStatsDbRecord[]> GetStepStats(string sessionId)
     {
         await using var connection = await dataSource.OpenConnectionAsync();
