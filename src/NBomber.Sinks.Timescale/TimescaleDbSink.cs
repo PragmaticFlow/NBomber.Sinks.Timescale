@@ -499,20 +499,11 @@ public class TimescaleDbSink : IReportingSink
         if (tagKeys.Length == 0)
             return;
 
-        var parameters = new Dictionary<string, object> { ["ProjectId"] = _projectId };
-        var rows = new List<string>();
-
-        for (var i = 0; i < tagKeys.Length; i++)
-        {
-            parameters[$"TagKey{i}"] = tagKeys[i];
-            rows.Add($"(@ProjectId, @TagKey{i})");
-        }
-
         await connection.ExecuteNonQueryAsync($@"
             INSERT INTO {TableNames.SessionTagKeysTable} ({ColumnNames.ProjectId}, {ColumnNames.TagKey})
-            VALUES {string.Join(", ", rows)}
+            SELECT @ProjectId, unnest(ARRAY[@TagKeys])
             ON CONFLICT DO NOTHING",
-            parameters,
+            new { ProjectId = _projectId, TagKeys = tagKeys },
             transaction: transaction!);
     }
 
