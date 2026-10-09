@@ -6,7 +6,7 @@ new TimescaleDBReportingExample().Run();
 public class TimescaleDBReportingExample
 {
     private readonly TimescaleDbSink _timescaleDbSink = new();
-    
+
     public void Run()
     {
         var scenario = Scenario.Create("user_flow_scenario", async context =>
@@ -37,7 +37,7 @@ public class TimescaleDBReportingExample
             Simulation.Inject(rate: 200, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromSeconds(30)),
             Simulation.RampingInject(rate: 0, interval: TimeSpan.FromSeconds(1), during: TimeSpan.FromMinutes(1))
         );
-        
+
         NBomberRunner
             .RegisterScenarios(scenario)
             .LoadInfraConfig("infra-config.json")

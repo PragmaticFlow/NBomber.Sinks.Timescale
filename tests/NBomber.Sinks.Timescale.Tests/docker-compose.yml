@@ -4,7 +4,7 @@
     image: timescale/timescaledb:2.25.0-pg18-oss
     restart: always
     environment:
-      POSTGRES_DB: nb_studio_db
+      POSTGRES_DB: timescaledb
       POSTGRES_USER: timescaledb
       POSTGRES_PASSWORD: timescaledb
       TS_TUNE_MAX_CONNS: "3000"
@@ -14,7 +14,7 @@
       - nb_studio_data:/var/lib/postgresql/data
     command: ["postgres"]
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d 'user=timescaledb dbname=nb_studio_db'" ]
+      test: [ "CMD-SHELL", "pg_isready -d 'user=timescaledb dbname=timescaledb'" ]
       interval: 5s
       timeout: 10s
       retries: 5
