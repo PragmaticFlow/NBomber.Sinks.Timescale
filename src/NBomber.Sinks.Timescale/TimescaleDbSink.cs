@@ -492,7 +492,7 @@ public class TimescaleDbSink : IReportingSink
             .ToArray();
     }
 
-    private async Task SaveTagKeys(NpgsqlConnection connection, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction? transaction = null)
+    private async Task SaveTagKeys(NpgsqlConnection connection, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction transaction)
     {
         var tagKeys = tagsDbRecord.Global.Keys.Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags.Keys)).Distinct().ToArray();
 
@@ -504,7 +504,7 @@ public class TimescaleDbSink : IReportingSink
             SELECT @ProjectId, unnest(ARRAY[@TagKeys])
             ON CONFLICT DO NOTHING",
             new { ProjectId = _projectId, TagKeys = tagKeys },
-            transaction: transaction!);
+            transaction: transaction);
     }
 
     internal string ParseProjectId(string projectId)
