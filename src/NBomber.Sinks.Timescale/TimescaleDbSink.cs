@@ -46,9 +46,9 @@ public class TimescaleDbSinkConfig
 /// </summary>
 public class TimescaleDbSink : IReportingSink
 {
-    private ILogger _logger;
-    private IBaseContext _context;
-    private NpgsqlDataSource _dataSource;
+    private ILogger? _logger;
+    private IBaseContext? _context;
+    private NpgsqlDataSource? _dataSource;
     private TimescaleDbSinkConfig _config = new("");
     private string _projectId = "";
     private bool _disposed = false;
@@ -138,7 +138,7 @@ public class TimescaleDbSink : IReportingSink
     {
         if (_dataSource != null)
         {
-            var nodeInfo = _context.GetNodeInfo();
+            var nodeInfo = _context!.GetNodeInfo();
             var testInfo = _context.TestInfo;
             var startTime = DateTime.UtcNow;
 
@@ -161,7 +161,7 @@ public class TimescaleDbSink : IReportingSink
                     Metadata = JsonSerializer.Serialize(new
                     {
                         Scenarios = sessionInfo.Scenarios.Select(scn => new { scn.ScenarioName, scn.SortIndex })
-                    }),
+                    })
                 };
 
                 try
@@ -176,7 +176,7 @@ public class TimescaleDbSink : IReportingSink
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, ex.Message);
+                    _logger!.Error(ex, ex.Message);
                     throw;
                 }
             }
@@ -196,7 +196,7 @@ public class TimescaleDbSink : IReportingSink
             .SelectMany(step => MapStepToDbRecord(step, currentTime, OperationType.Bombing))
             .ToArray();
 
-        await using var connection = await _dataSource.OpenConnectionAsync();
+        await using var connection = await _dataSource!.OpenConnectionAsync();
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
     }
 
@@ -209,7 +209,7 @@ public class TimescaleDbSink : IReportingSink
     {
         var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, OperationType.Bombing);
         
-        await using var connection = await _dataSource.OpenConnectionAsync();
+        await using var connection = await _dataSource!.OpenConnectionAsync();
         await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
     }
 
@@ -223,7 +223,7 @@ public class TimescaleDbSink : IReportingSink
     {
         var currentTime = DateTime.UtcNow;
         var operation = OperationType.Complete;
-        var testInfo = _context.TestInfo;
+        var testInfo = _context!.TestInfo;
 
         var metrics = MapMetricToDbRecord(stats.Metrics, currentTime, operation);
 
@@ -244,7 +244,7 @@ public class TimescaleDbSink : IReportingSink
             Artifacts = artifacts.Length == 0 ? null : artifacts
         };
 
-        await using var connection = await _dataSource.OpenConnectionAsync();
+        await using var connection = await _dataSource!.OpenConnectionAsync();
         await using var ts = await connection.BeginTransactionAsync();
 
         await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
@@ -285,7 +285,7 @@ public class TimescaleDbSink : IReportingSink
 
     private MetricDbRecord[] MapMetricToDbRecord(MetricStats stats, DateTime currentTime, OperationType operationType)
     {
-        var testInfo = _context.TestInfo;
+        var testInfo = _context!.TestInfo;
 
         var counters = stats.Counters.Select(x => new MetricDbRecord
         {
@@ -318,7 +318,7 @@ public class TimescaleDbSink : IReportingSink
 
     private StepStatsDbRecord[] MapStepToDbRecord(ScenarioStats scnStats, DateTime currentTime, OperationType currentOperation)
     {
-        var testInfo = _context.TestInfo;
+        var testInfo = _context!.TestInfo;
         
         return scnStats.StepStats
             .Select(step =>
@@ -399,7 +399,7 @@ public class TimescaleDbSink : IReportingSink
 
     private string GetListenStopCommandChannelName()
     {
-        return $"{StopSessionChannelName}__{_context.TestInfo.SessionId.Replace("-", "_")}";
+        return $"{StopSessionChannelName}__{_context!.TestInfo.SessionId.Replace("-", "_")}";
     }
 
     private void StartListenStopCommand(NpgsqlDataSource dataSource)
@@ -418,13 +418,13 @@ public class TimescaleDbSink : IReportingSink
 
                     connection.Notification += (obj, e) =>
                     {
-                        _context.StopCurrentTest(reason: "Received Stop command from TimescaleDB");
+                        _context!.StopCurrentTest(reason: "Received Stop command from TimescaleDB");
                     };
 
                     while (!_disposed)
                     {
                         StopCommandListening = true;
-                        _logger.Debug($"{nameof(TimescaleDbSink)}: waiting on the PUSH message");
+                        _logger!.Debug($"{nameof(TimescaleDbSink)}: waiting on the PUSH message");
                         
                         await connection.WaitAsync(_sessionChannelCTS.Token);
                     }
@@ -437,7 +437,7 @@ public class TimescaleDbSink : IReportingSink
                 }
                 catch (Exception ex) when (!_disposed)
                 {
-                    _logger.Warning(ex, $"{nameof(TimescaleDbSink)}: failed to connect, retrying in 5s...");
+                    _logger!.Warning(ex, $"{nameof(TimescaleDbSink)}: failed to connect, retrying in 5s...");
                     await Task.Delay(TimeSpan.FromSeconds(5));
                 }
                 finally
