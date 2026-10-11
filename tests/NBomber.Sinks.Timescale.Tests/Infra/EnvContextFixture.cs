@@ -17,12 +17,17 @@ public class EnvContextFixture
 
         var dataSourceBuilder = new NpgsqlDataSourceBuilder(_config.DBSettings.ConnectionString);
         var dataSource = dataSourceBuilder.Build();
+        var databaseName = dataSourceBuilder.ConnectionStringBuilder.Database!;
 
-        HealthCheck.WaitUntilReady(dataSource).Wait();
+        var maintenanceDataSourceBuilder = new NpgsqlDataSourceBuilder(_config.DBSettings.ConnectionString);
+        maintenanceDataSourceBuilder.ConnectionStringBuilder.Database = "postgres";
+        var maintenanceDataSource = maintenanceDataSourceBuilder.Build();
+
+        HealthCheck.WaitUntilReady(maintenanceDataSource).Wait();
 
         PropertyHandlerMapper.Add<TimeSpan, TimeSpanPropertyHandler>(force: true);
 
-        TestHelper = new TestHelper(dataSource);
+        TestHelper = new TestHelper(dataSource, maintenanceDataSource, databaseName);
     }
 
     public TimescaleDbSink CreateTimescaleDbSinkInstance()

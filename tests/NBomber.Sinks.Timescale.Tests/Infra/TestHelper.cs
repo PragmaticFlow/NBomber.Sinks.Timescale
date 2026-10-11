@@ -7,7 +7,7 @@ using System.Text;
 
 namespace NBomber.Sinks.Timescale.Tests.Infra;
 
-public class TestHelper(NpgsqlDataSource dataSource)
+public class TestHelper(NpgsqlDataSource dataSource, NpgsqlDataSource maintenanceDataSource, string databaseName)
 {
     public async Task CreateTables()
     {
@@ -27,16 +27,14 @@ public class TestHelper(NpgsqlDataSource dataSource)
             ;");
     }
 
-    public async Task DeleteTables()
+    public async Task RecreateDatabase()
     {
-        await using var connection = await dataSource.OpenConnectionAsync();
+        dataSource.Clear();
 
-        await connection.ExecuteNonQueryAsync
-            (@$"DROP TABLE IF EXISTS {TableNames.SchemaVersionTable}; 
-                    DROP TABLE IF EXISTS {TableNames.SessionsTable};
-                    DROP TABLE IF EXISTS {TableNames.StepStatsTable};
-                    DROP TABLE IF EXISTS {TableNames.MetricsTable};
-                    DROP TABLE IF EXISTS {TableNames.SessionTagKeysTable}");
+        await using var connection = await maintenanceDataSource.OpenConnectionAsync();
+
+        await connection.ExecuteNonQueryAsync($@"DROP DATABASE IF EXISTS ""{databaseName}"" WITH (FORCE)");
+        await connection.ExecuteNonQueryAsync($@"CREATE DATABASE ""{databaseName}""");
     }
 
     public async Task NotifyStopSession(string sessionId)
