@@ -16,9 +16,10 @@ public class TagsTests(EnvContextFixture fixture) : IClassFixture<EnvContextFixt
         // the first session: global tags and the tags of two scenarios, with the env key in both
         NBomberRunner
             .RegisterScenarios(
-                CreateTaggedScenario("scenario_1", new() { ["flow"] = "checkout", ["env"] = "prod" }),
-                CreateTaggedScenario("scenario_2", new() { ["region"] = "eu" }))
-            .WithTags(new Dictionary<string, string> { ["env"] = "prod", ["team"] = "payments" })
+                CreateTaggedScenario("scenario_1", ("flow", "checkout"), ("env", "prod")),
+                CreateTaggedScenario("scenario_2", ("region", "eu"))
+            )
+            .WithTags(("env", "prod"), ("team", "payments"))
             .WithReportingSinks(fixture.CreateTimescaleDbSinkInstance())
             .WithoutReports()
             .Run();
@@ -29,8 +30,8 @@ public class TagsTests(EnvContextFixture fixture) : IClassFixture<EnvContextFixt
 
         // the second session: a key that is saved already and a new one
         NBomberRunner
-            .RegisterScenarios(CreateTaggedScenario("scenario_1", new() { ["flow"] = "refund" }))
-            .WithTags(new Dictionary<string, string> { ["env"] = "dev", ["owner"] = "qa" })
+            .RegisterScenarios(CreateTaggedScenario("scenario_1", ("flow", "refund")))
+            .WithTags(("env", "dev"), ("owner", "qa"))
             .WithReportingSinks(fixture.CreateTimescaleDbSinkInstance())
             .WithoutReports()
             .Run();
@@ -45,7 +46,7 @@ public class TagsTests(EnvContextFixture fixture) : IClassFixture<EnvContextFixt
         sessionsCount.ShouldBe(2);
     }
 
-    private static ScenarioProps CreateTaggedScenario(string scenarioName, Dictionary<string, string> tags)
+    private static ScenarioProps CreateTaggedScenario(string scenarioName, params (string, string)[] tags)
     {
         return Scenario.Create(scenarioName, async context =>
         {
