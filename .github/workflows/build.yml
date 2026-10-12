@@ -26,6 +26,3 @@ jobs:
 
     - name: Test
       run: dotnet test tests/NBomber.Sinks.Timescale.Tests/NBomber.Sinks.Timescale.Tests.csproj --configuration Release --verbosity normal
-
-    - name: Docker Compose Down
-      run: docker compose down
