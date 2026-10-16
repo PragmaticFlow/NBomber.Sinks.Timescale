@@ -96,7 +96,7 @@ public class TimescaleDbSink : IReportingSink
 
         _projectId = ParseProjectId(_context.TestInfo.ProjectId);
 
-        var config = infraConfig?.GetSection("TimescaleDbSink").Get<TimescaleDbSinkConfig>();
+        var config = infraConfig.GetSection("TimescaleDbSink").Get<TimescaleDbSinkConfig>();
         if (config != null)
         {
             _config = config;
