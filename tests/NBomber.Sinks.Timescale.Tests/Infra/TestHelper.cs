@@ -80,9 +80,20 @@ public class TestHelper(NpgsqlDataSource dataSource, NpgsqlDataSource maintenanc
     {
         await using var connection = await dataSource.OpenConnectionAsync();
 
-        var result = await connection.ExecuteQueryAsync<string>($"SELECT {ColumnNames.TagKey} FROM {TableNames.SessionTagKeysTable}");
+        var result = await connection.QueryAllAsync<TagKeyDbRecord>(
+            tableName: TableNames.SessionTagKeysTable,
+            fields: Field.Parse<TagKeyDbRecord>(x => x.Key));
 
-        return result.ToArray();
+        return result.Select(tag => tag.Key).ToArray();
+    }
+
+    internal async Task<Dictionary<string, TagKeyDbRecord>> GetTagKeyRecords()
+    {
+        await using var connection = await dataSource.OpenConnectionAsync();
+
+        var result = await connection.QueryAllAsync<TagKeyDbRecord>(tableName: TableNames.SessionTagKeysTable);
+
+        return result.ToDictionary(tag => tag.Key);
     }
 
     internal async Task<StepStatsDbRecord[]> GetStepStats(string sessionId)
@@ -103,14 +114,14 @@ public class TestHelper(NpgsqlDataSource dataSource, NpgsqlDataSource maintenanc
 
         try
         {
-            var result = await connection.ExecuteQueryAsync<byte[]>(
-                $@"SELECT {ColumnNames.Artifacts}
-                    FROM {TableNames.SessionsTable}
-                    WHERE session_id = @sessionId",
-                new { sessionId }
-            );
+            var result = await connection.QueryAsync<SessionInfoDbRecord>(
+                tableName: TableNames.SessionsTable,
+                where: session => session.SessionId == sessionId,
+                fields: Field.Parse<SessionInfoDbRecord>(session => session.Artifacts!));
 
-            return result.Any() ? UnzipReportFiles(result.First()) : [];
+            var artifacts = result.FirstOrDefault()?.Artifacts;
+
+            return artifacts != null ? UnzipReportFiles(artifacts) : [];
         }
         catch
         {

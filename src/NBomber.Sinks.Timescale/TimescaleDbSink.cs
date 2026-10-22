@@ -492,18 +492,40 @@ public class TimescaleDbSink : IReportingSink
             .ToArray();
     }
 
+    // Safe for sessions that start at the same time with the same tag keys: the values are merged inside one
+    // INSERT ... ON CONFLICT DO UPDATE, which locks the key's row and merges with its latest saved values.
+    // A concurrent session waits for the lock and then merges with the values just saved, so no session overwrites
+    // the values of another one.
     private async Task SaveTagKeys(NpgsqlConnection connection, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction transaction)
     {
-        var tagKeys = tagsDbRecord.Global.Keys.Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags.Keys)).Distinct().ToArray();
+        var tagsAndValues = tagsDbRecord.Global
+            .Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags))
+            .GroupBy(tag => tag.Key, tag => tag.Value)
+            .ToDictionary(sameKeyTags => sameKeyTags.Key, sameKeyTags => sameKeyTags.Distinct().ToArray());
 
-        if (tagKeys.Length == 0)
+        if (tagsAndValues.Count == 0)
             return;
 
         await connection.ExecuteNonQueryAsync($@"
-            INSERT INTO {TableNames.SessionTagKeysTable} ({ColumnNames.ProjectId}, {ColumnNames.TagKey})
-            SELECT @ProjectId, unnest(ARRAY[@TagKeys])
-            ON CONFLICT DO NOTHING",
-            new { ProjectId = _projectId, TagKeys = tagKeys },
+            -- 2
+            INSERT INTO {TableNames.SessionTagKeysTable} ({ColumnNames.ProjectId}, {ColumnNames.TagKey}, {ColumnNames.TagValues}, {ColumnNames.Created}, {ColumnNames.LastUpdated})
+
+            -- 1
+            SELECT @ProjectId, tag.key, ARRAY(SELECT jsonb_array_elements_text(tag.value)), now(), now()
+            FROM jsonb_each(@TagsAndValues::jsonb) AS tag
+
+            -- 3
+            ON CONFLICT ({ColumnNames.ProjectId}, {ColumnNames.TagKey}) DO UPDATE
+            SET {ColumnNames.TagValues} = ARRAY(
+                    SELECT DISTINCT unnest({TableNames.SessionTagKeysTable}.{ColumnNames.TagValues} || EXCLUDED.{ColumnNames.TagValues})),
+                {ColumnNames.LastUpdated} = now()
+
+            -- 4. the row is updated only when some of the values are new
+            WHERE NOT {TableNames.SessionTagKeysTable}.{ColumnNames.TagValues} @> EXCLUDED.{ColumnNames.TagValues}",
+            new { 
+                ProjectId = _projectId,
+                TagsAndValues = JsonSerializer.Serialize(tagsAndValues) 
+            },
             transaction: transaction);
     }
 

@@ -147,4 +147,29 @@ internal static class SqlQueries
             CONSTRAINT pk_nb_session_tag_keys PRIMARY KEY ({ColumnNames.ProjectId}, {ColumnNames.TagKey})
         );
         ";
+
+    public static string SetTagKeysProjectIdDefault => $@"
+        ALTER TABLE {TableNames.SessionTagKeysTable}
+            ALTER COLUMN {ColumnNames.ProjectId} SET DEFAULT '';
+        ";
+
+    public static string AddTagValuesColumn => $@"
+        ALTER TABLE {TableNames.SessionTagKeysTable}
+            ADD IF NOT EXISTS {ColumnNames.TagValues} TEXT[] NOT NULL DEFAULT '{{}}';
+        ";
+
+    public static string AddTagKeysCreatedAndLastUpdatedColumns => $@"
+        ALTER TABLE {TableNames.SessionTagKeysTable}
+            ADD IF NOT EXISTS {ColumnNames.Created} TIMESTAMPTZ NOT NULL DEFAULT now(),
+            ADD IF NOT EXISTS {ColumnNames.LastUpdated} TIMESTAMPTZ NOT NULL DEFAULT now();
+        ";
+
+    public static string SetSessionsProjectIdDefault => $@"
+        UPDATE {TableNames.SessionsTable}
+        SET {ColumnNames.ProjectId} = ''
+        WHERE {ColumnNames.ProjectId} IS NULL;
+
+        ALTER TABLE {TableNames.SessionsTable}
+            ALTER COLUMN {ColumnNames.ProjectId} SET DEFAULT '';
+        ";
 }

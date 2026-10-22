@@ -19,6 +19,9 @@ internal static class ColumnNames
     public const string Metadata = "metadata";
     public const string Tags = "tags";
     public const string TagKey = "tag_key";
+    public const string TagValues = "tag_values";
+    public const string Created = "created";
+    public const string LastUpdated = "last_updated";
     
     public const string NodeInfo = "node_info";
     public const string TestSuite = "test_suite";
