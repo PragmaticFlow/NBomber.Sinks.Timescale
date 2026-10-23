@@ -170,7 +170,7 @@ public class TimescaleDbSink : IReportingSink
                     await using var transaction = await connection.BeginTransactionAsync();
 
                     await connection.InsertAsync(TableNames.SessionsTable, record, transaction: transaction);
-                    await SaveTagKeys(connection, sessionTags, transaction);
+                    await SaveTagKeys(connection, _projectId, sessionTags, transaction);
 
                     await transaction.CommitAsync();
                 }
@@ -496,7 +496,7 @@ public class TimescaleDbSink : IReportingSink
     // INSERT ... ON CONFLICT DO UPDATE, which locks the key's row and merges with its latest saved values.
     // A concurrent session waits for the lock and then merges with the values just saved, so no session overwrites
     // the values of another one.
-    private async Task SaveTagKeys(NpgsqlConnection connection, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction transaction)
+    internal static async Task SaveTagKeys(NpgsqlConnection connection, string projectId, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction transaction)
     {
         var tagsAndValues = tagsDbRecord.Global
             .Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags))
@@ -523,7 +523,7 @@ public class TimescaleDbSink : IReportingSink
             -- 4. the row is updated only when some of the values are new
             WHERE NOT {TableNames.SessionTagKeysTable}.{ColumnNames.TagValues} @> EXCLUDED.{ColumnNames.TagValues}",
             new { 
-                ProjectId = _projectId,
+                ProjectId = projectId,
                 TagsAndValues = JsonSerializer.Serialize(tagsAndValues) 
             },
             transaction: transaction);
