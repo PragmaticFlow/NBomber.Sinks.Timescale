@@ -105,35 +105,35 @@ internal static class SqlQueries
     public static string SetNewChunkInterval(string table, int monthCount) =>
         $"SELECT set_chunk_time_interval('{table}', interval '{monthCount} month');";
 
-    public static string AddSimulationNameColumn => $@"
+    public static string AddSimulationNameForStepStats => $@"
         ALTER TABLE ""{TableNames.StepStatsTable}""
             ADD IF NOT EXISTS {ColumnNames.SimulationName} TEXT;
        ";
 
-    public static string AddSessionResultColumn => $@"
+    public static string AddSessionResultForSessions => $@"
         ALTER TABLE ""{TableNames.SessionsTable}""
             ADD IF NOT EXISTS {ColumnNames.SessionResult} JSONB;
        ";
 
-    public static string AddArtifactsColumn => $@"
+    public static string AddArtifactsForSessions => $@"
         ALTER TABLE ""{TableNames.SessionsTable}""
             ADD IF NOT EXISTS {ColumnNames.Artifacts} BYTEA;
         ";
 
-    public static string AddBytesPerSecondColumns => $@"
+    public static string AddBytesPerSecondForStepStats => $@"
         ALTER TABLE {TableNames.StepStatsTable}
             ADD IF NOT EXISTS {ColumnNames.OkBytesPerSecond} DOUBLE PRECISION,
             ADD IF NOT EXISTS {ColumnNames.FailBytesPerSecond} DOUBLE PRECISION;
         ";
 
-    public static string AddProjectIdColumn => $@"
+    public static string AddProjectIdForSessions => $@"
         ALTER TABLE {TableNames.SessionsTable}
             ADD IF NOT EXISTS {ColumnNames.ProjectId} TEXT;
         
         CREATE INDEX IF NOT EXISTS idx_nb_sessions_project_id ON {TableNames.SessionsTable}({ColumnNames.ProjectId});
         ";
 
-    public static string AddTagsColumn => $@"
+    public static string AddTagsForSessions => $@"
         ALTER TABLE {TableNames.SessionsTable}
             ADD IF NOT EXISTS {ColumnNames.Tags} JSONB;
         ";
@@ -148,23 +148,15 @@ internal static class SqlQueries
         );
         ";
 
-    public static string SetTagKeysProjectIdDefault => $@"
+    public static string AddTagValuesForSessionTagKeys => $@"
         ALTER TABLE {TableNames.SessionTagKeysTable}
-            ALTER COLUMN {ColumnNames.ProjectId} SET DEFAULT '';
-        ";
-
-    public static string AddTagValuesColumn => $@"
-        ALTER TABLE {TableNames.SessionTagKeysTable}
-            ADD IF NOT EXISTS {ColumnNames.TagValues} TEXT[] NOT NULL DEFAULT '{{}}';
-        ";
-
-    public static string AddTagKeysCreatedAndLastUpdatedColumns => $@"
-        ALTER TABLE {TableNames.SessionTagKeysTable}
+            ALTER COLUMN {ColumnNames.ProjectId} SET DEFAULT '',
+            ADD IF NOT EXISTS {ColumnNames.TagValues} TEXT[] NOT NULL DEFAULT '{{}}',
             ADD IF NOT EXISTS {ColumnNames.Created} TIMESTAMPTZ NOT NULL DEFAULT now(),
             ADD IF NOT EXISTS {ColumnNames.LastUpdated} TIMESTAMPTZ NOT NULL DEFAULT now();
         ";
 
-    public static string SetSessionsProjectIdDefault => $@"
+    public static string SetProjectIdDefaultForSessions => $@"
         UPDATE {TableNames.SessionsTable}
         SET {ColumnNames.ProjectId} = ''
         WHERE {ColumnNames.ProjectId} IS NULL;

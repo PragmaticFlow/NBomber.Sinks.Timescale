@@ -82,37 +82,35 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
                     break;
 
                 case 3:
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddSimulationNameColumn);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddSimulationNameForStepStats);
                     break;
                 
                 case 4:
                     await connection.ExecuteNonQueryAsync(SqlQueries.SetNewChunkInterval(TableNames.StepStatsTable, monthCount: 1));
                     await connection.ExecuteNonQueryAsync(SqlQueries.SetNewChunkInterval(TableNames.MetricsTable, monthCount: 1));
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddSessionResultColumn);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddSessionResultForSessions);
                     break;
 
                 case 5:
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddArtifactsColumn);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddArtifactsForSessions);
                     break;
 
                 case 6:
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddBytesPerSecondColumns);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddBytesPerSecondForStepStats);
                     break;
 
                 case 7:
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddProjectIdColumn);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddProjectIdForSessions);
                     break;
 
                 case 8:
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddTagsColumn);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddTagsForSessions);
                     await connection.ExecuteNonQueryAsync(SqlQueries.CreateSessionTagKeysTable);
                     break;
 
                 case 9:
-                    await connection.ExecuteNonQueryAsync(SqlQueries.SetTagKeysProjectIdDefault);
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddTagValuesColumn);
-                    await connection.ExecuteNonQueryAsync(SqlQueries.AddTagKeysCreatedAndLastUpdatedColumns);
-                    await connection.ExecuteNonQueryAsync(SqlQueries.SetSessionsProjectIdDefault);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.AddTagValuesForSessionTagKeys);
+                    await connection.ExecuteNonQueryAsync(SqlQueries.SetProjectIdDefaultForSessions);
                     break;
             }
             

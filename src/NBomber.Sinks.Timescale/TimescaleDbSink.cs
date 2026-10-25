@@ -496,23 +496,28 @@ public class TimescaleDbSink : IReportingSink
     // INSERT ... ON CONFLICT DO UPDATE, which locks the key's row and merges with its latest saved values.
     // A concurrent session waits for the lock and then merges with the values just saved, so no session overwrites
     // the values of another one.
-    internal static async Task SaveTagKeys(NpgsqlConnection connection, string projectId, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction transaction)
+    internal static async ValueTask SaveTagKeys(NpgsqlConnection connection, string projectId, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction transaction)
     {
-        var tagsAndValues = tagsDbRecord.Global
+        // one (key, value) pair per element, without duplicate pairs
+        var tagPairs = tagsDbRecord.Global
             .Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags))
-            .GroupBy(tag => tag.Key, tag => tag.Value)
-            .ToDictionary(sameKeyTags => sameKeyTags.Key, sameKeyTags => sameKeyTags.Distinct().ToArray());
+            .Select(tag => (tag.Key, tag.Value))
+            .Distinct()
+            .ToArray();
 
-        if (tagsAndValues.Count == 0)
+        if (tagPairs.Length == 0)
             return;
 
-        await connection.ExecuteNonQueryAsync($@"
+        // NpgsqlCommand is used instead of RepoDb: RepoDb expands array parameters into a list of scalar
+        // parameters (for IN clauses), and unnest needs real text[] parameters
+        await using var command = new NpgsqlCommand($@"
             -- 2
             INSERT INTO {TableNames.SessionTagKeysTable} ({ColumnNames.ProjectId}, {ColumnNames.TagKey}, {ColumnNames.TagValues}, {ColumnNames.Created}, {ColumnNames.LastUpdated})
 
-            -- 1
-            SELECT @ProjectId, tag.key, ARRAY(SELECT jsonb_array_elements_text(tag.value)), now(), now()
-            FROM jsonb_each(@TagsAndValues::jsonb) AS tag
+            -- 1. the parallel arrays become (key, value) rows, then they are grouped into one row per key
+            SELECT @ProjectId, tag.key, array_agg(DISTINCT tag.value), now(), now()
+            FROM unnest(@TagKeys::text[], @TagValues::text[]) AS tag(key, value)
+            GROUP BY tag.key
 
             -- 3
             ON CONFLICT ({ColumnNames.ProjectId}, {ColumnNames.TagKey}) DO UPDATE
@@ -522,11 +527,13 @@ public class TimescaleDbSink : IReportingSink
 
             -- 4. the row is updated only when some of the values are new
             WHERE NOT {TableNames.SessionTagKeysTable}.{ColumnNames.TagValues} @> EXCLUDED.{ColumnNames.TagValues}",
-            new { 
-                ProjectId = projectId,
-                TagsAndValues = JsonSerializer.Serialize(tagsAndValues) 
-            },
-            transaction: transaction);
+            connection, transaction);
+
+        command.Parameters.AddWithValue("ProjectId", projectId);
+        command.Parameters.AddWithValue("TagKeys", tagPairs.Select(pair => pair.Key).ToArray());
+        command.Parameters.AddWithValue("TagValues", tagPairs.Select(pair => pair.Value).ToArray());
+
+        await command.ExecuteNonQueryAsync();
     }
 
     internal string ParseProjectId(string projectId)
