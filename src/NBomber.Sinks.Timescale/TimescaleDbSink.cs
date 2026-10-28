@@ -170,7 +170,7 @@ public class TimescaleDbSink : IReportingSink
                     await using var transaction = await connection.BeginTransactionAsync();
 
                     await connection.InsertAsync(TableNames.SessionsTable, record, transaction: transaction);
-                    await SaveTagKeys(connection, _projectId, sessionTags, transaction);
+                    await SaveTags(connection, _projectId, testInfo.SessionId, sessionTags, transaction);
 
                     await transaction.CommitAsync();
                 }
@@ -492,11 +492,20 @@ public class TimescaleDbSink : IReportingSink
             .ToArray();
     }
 
+    private static string[] GetTagWords(SessionTagsDbRecord tagsDbRecord)
+    {
+        return tagsDbRecord.Global
+            .Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags))
+            .Select(tag => $"{tag.Key}={tag.Value}")
+            .Distinct()
+            .ToArray();
+    }
+
     // Safe for sessions that start at the same time with the same tag keys: the values are merged inside one
     // INSERT ... ON CONFLICT DO UPDATE, which locks the key's row and merges with its latest saved values.
     // A concurrent session waits for the lock and then merges with the values just saved, so no session overwrites
     // the values of another one.
-    internal static async ValueTask SaveTagKeys(NpgsqlConnection connection, string projectId, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction transaction)
+    internal static void SaveTagKeys(NpgsqlBatch batch, string projectId, SessionTagsDbRecord tagsDbRecord)
     {
         // one (key, value) pair per element, without duplicate pairs
         var tagPairs = tagsDbRecord.Global
@@ -510,7 +519,7 @@ public class TimescaleDbSink : IReportingSink
 
         // NpgsqlCommand is used instead of RepoDb: RepoDb expands array parameters into a list of scalar
         // parameters (for IN clauses), and unnest needs real text[] parameters
-        await using var command = new NpgsqlCommand($@"
+        var command = new NpgsqlBatchCommand($@"
             -- 2
             INSERT INTO {TableNames.SessionTagKeysTable} ({ColumnNames.ProjectId}, {ColumnNames.TagKey}, {ColumnNames.TagValues}, {ColumnNames.Created}, {ColumnNames.LastUpdated})
 
@@ -526,14 +535,39 @@ public class TimescaleDbSink : IReportingSink
                 {ColumnNames.LastUpdated} = now()
 
             -- 4. the row is updated only when some of the values are new
-            WHERE NOT {TableNames.SessionTagKeysTable}.{ColumnNames.TagValues} @> EXCLUDED.{ColumnNames.TagValues}",
-            connection, transaction);
+            WHERE NOT {TableNames.SessionTagKeysTable}.{ColumnNames.TagValues} @> EXCLUDED.{ColumnNames.TagValues}");
 
         command.Parameters.AddWithValue("ProjectId", projectId);
         command.Parameters.AddWithValue("TagKeys", tagPairs.Select(pair => pair.Key).ToArray());
         command.Parameters.AddWithValue("TagValues", tagPairs.Select(pair => pair.Value).ToArray());
 
-        await command.ExecuteNonQueryAsync();
+        batch.BatchCommands.Add(command);
+    }
+
+    internal static void SaveTagsVector(NpgsqlBatch batch, string sessionId, SessionTagsDbRecord tagsDbRecord)
+    {
+        if (tagsDbRecord.Global.Count == 0 && tagsDbRecord.Scenarios.Length == 0)
+            return;
+
+        var command = new NpgsqlBatchCommand($@"
+            UPDATE {TableNames.SessionsTable}
+            SET {ColumnNames.TagsVector} = array_to_tsvector(@TagWords::text[])
+            WHERE {ColumnNames.SessionId} = @SessionId");
+
+        command.Parameters.AddWithValue("TagWords", GetTagWords(tagsDbRecord));
+        command.Parameters.AddWithValue("SessionId", sessionId);
+
+        batch.BatchCommands.Add(command);
+    }
+
+    internal static async Task SaveTags(NpgsqlConnection connection, string projectId, string sessionId, SessionTagsDbRecord tagsDbRecord, NpgsqlTransaction? transaction = null)
+    {
+        await using var batch = new NpgsqlBatch(connection, transaction);
+
+        SaveTagKeys(batch, projectId, tagsDbRecord);
+        SaveTagsVector(batch, sessionId, tagsDbRecord);
+
+        await batch.ExecuteNonQueryAsync();
     }
 
     internal string ParseProjectId(string projectId)

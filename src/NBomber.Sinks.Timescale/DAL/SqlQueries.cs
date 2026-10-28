@@ -164,4 +164,20 @@ internal static class SqlQueries
         ALTER TABLE {TableNames.SessionsTable}
             ALTER COLUMN {ColumnNames.ProjectId} SET DEFAULT '';
         ";
+
+    public static string AddTagsVectorForSessions => $@"
+        ALTER TABLE {TableNames.SessionsTable}
+            ADD IF NOT EXISTS {ColumnNames.TagsVector} TSVECTOR NOT NULL DEFAULT '';
+
+        UPDATE {TableNames.SessionsTable}
+        SET {ColumnNames.TagsVector} = array_to_tsvector(ARRAY(
+            SELECT tag.key || '=' || tag.value
+            FROM jsonb_each_text({ColumnNames.Tags}->'global') AS tag
+            UNION
+            SELECT tag.key || '=' || tag.value
+            FROM jsonb_array_elements({ColumnNames.Tags}->'scenarios') AS scenario,
+                 jsonb_each_text(scenario->'tags') AS tag
+        ))
+        WHERE {ColumnNames.Tags} IS NOT NULL;
+        ";
 }

@@ -18,6 +18,7 @@ internal static class ColumnNames
     public const string CurrentOperation = "current_operation";
     public const string Metadata = "metadata";
     public const string Tags = "tags";
+    public const string TagsVector = "tags_vector";
     public const string TagKey = "tag_key";
     public const string TagValues = "tag_values";
     public const string Created = "created";
