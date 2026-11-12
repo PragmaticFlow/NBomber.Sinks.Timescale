@@ -6,6 +6,7 @@ using RepoDb.Attributes.Parameter.Npgsql;
 
 namespace NBomber.Sinks.Timescale.Contracts;
 
+[Table(TableNames.SessionsTable)]
 internal class SessionInfoDbRecord
 {
     [Column(ColumnNames.Time)] public DateTime Time { get; set; }

@@ -26,7 +26,7 @@ public class StatsTests(EnvContextFixture fixture) : IClassFixture<EnvContextFix
             return Response.Ok(statusCode: "201", message: "hey");
         })
         .WithoutWarmUp()
-        .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(1)));
+        .WithLoadSimulations(Simulation.ConstantVUs(1, duration: TimeSpan.FromSeconds(1)));
 
         var stats = NBomberRunner
             .RegisterScenarios(scenario)
@@ -96,7 +96,7 @@ public class StatsTests(EnvContextFixture fixture) : IClassFixture<EnvContextFix
             return Response.Ok(statusCode: "201");
         })
         .WithoutWarmUp()
-        .WithLoadSimulations(Simulation.KeepConstant(1, during: TimeSpan.FromSeconds(2)));
+        .WithLoadSimulations(Simulation.ConstantVUs(1, duration: TimeSpan.FromSeconds(2)));
     }
 
     private static int SortIndexOf(StepStatsDbRecord[] stepStats, string scenario, string step)
