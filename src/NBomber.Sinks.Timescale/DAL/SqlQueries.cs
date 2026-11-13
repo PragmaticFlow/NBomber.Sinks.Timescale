@@ -180,4 +180,22 @@ internal static class SqlQueries
         ))
         WHERE {ColumnNames.Tags} IS NOT NULL;
         ";
+
+    public static string CreateThresholdsTable => $@"
+        CREATE TABLE IF NOT EXISTS {TableNames.ThresholdsTable}
+        (
+            {ColumnNames.Time}              TIMESTAMPTZ            NOT NULL,
+            {ColumnNames.ScenarioTimestamp} TIME WITHOUT TIME ZONE NOT NULL,
+            {ColumnNames.SessionId}         TEXT                   NOT NULL,
+            {ColumnNames.CurrentOperation}  TEXT                   NOT NULL,
+            {ColumnNames.Scenario}          TEXT                   NOT NULL,
+            {ColumnNames.Step}              TEXT                   NOT NULL,
+            {ColumnNames.CheckExpression}   TEXT                   NOT NULL,
+            {ColumnNames.IsFailed}          BOOLEAN                NOT NULL,
+            {ColumnNames.ExceptionMsg}      TEXT                   NOT NULL,
+            {ColumnNames.ErrorCount}        INT                    NOT NULL
+        );
+        SELECT create_hypertable('{TableNames.ThresholdsTable}', by_range('{ColumnNames.Time}', INTERVAL '1 day'), if_not_exists => TRUE);
+        CREATE INDEX IF NOT EXISTS idx_{TableNames.ThresholdsTable}_{ColumnNames.SessionId} ON {TableNames.ThresholdsTable} ({ColumnNames.SessionId});
+        ";
 }

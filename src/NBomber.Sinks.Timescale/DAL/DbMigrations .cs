@@ -6,7 +6,7 @@ namespace NBomber.Sinks.Timescale.DAL;
 
 internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
 {
-    public const int SinkSchemaVersion = 10;
+    public const int SinkSchemaVersion = 11;
 
     public async Task Run()
     {
@@ -115,6 +115,10 @@ internal class DbMigrations(NpgsqlConnection connection, ILogger logger)
 
                 case 10:
                     await connection.ExecuteNonQueryAsync(SqlQueries.AddTagsVectorForSessions);
+                    break;
+
+                case 11:
+                    await connection.ExecuteNonQueryAsync(SqlQueries.CreateThresholdsTable);
                     break;
             }
             

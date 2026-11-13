@@ -1,16 +1,16 @@
-using System.IO.Compression;
-using System.Text;
-using System.Text.Json;
-using FSharp.Json;
 using Microsoft.Extensions.Configuration;
-using Npgsql;
-using RepoDb;
-using ILogger = Serilog.ILogger;
 using NBomber.Contracts;
 using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
 using NBomber.Sinks.Timescale.Contracts;
 using NBomber.Sinks.Timescale.DAL;
+using Npgsql;
+using RepoDb;
+using System.IO.Compression;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using ILogger = Serilog.ILogger;
 
 namespace NBomber.Sinks.Timescale;
 
@@ -147,6 +147,9 @@ public class TimescaleDbSink : IReportingSink
                 var scenariosTags = GetScenariosTags(sessionInfo);
                 var sessionTags = new SessionTagsDbRecord { Global = testInfo.Tags.ToDictionary(), Scenarios = scenariosTags };
 
+                var fsharpOptions = JsonFSharpOptions.Default().ToJsonSerializerOptions();
+                fsharpOptions.Converters.Add(new JsonStringEnumConverter());
+
                 var record = new SessionInfoDbRecord
                 {
                     Time = startTime,
@@ -157,7 +160,7 @@ public class TimescaleDbSink : IReportingSink
                     TestSuite = testInfo.TestSuite,
                     TestName = testInfo.TestName,
                     Tags = JsonSerializer.Serialize(sessionTags),
-                    NodeInfo = Json.serialize(nodeInfo),
+                    NodeInfo = JsonSerializer.Serialize(nodeInfo, fsharpOptions),
                     Metadata = JsonSerializer.Serialize(new
                     {
                         Scenarios = sessionInfo.Scenarios.Select(scn => new { scn.ScenarioName, scn.SortIndex })
@@ -197,7 +200,7 @@ public class TimescaleDbSink : IReportingSink
             .ToArray();
 
         await using var connection = await _dataSource!.OpenConnectionAsync();
-        await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, points);
+        await connection.BulkInsertAsync(TableNames.StepStatsTable, points);
     }
 
     /// <summary>
@@ -210,7 +213,23 @@ public class TimescaleDbSink : IReportingSink
         var points = MapMetricToDbRecord(metrics, DateTime.UtcNow, OperationType.Bombing);
         
         await using var connection = await _dataSource!.OpenConnectionAsync();
-        await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, points);
+        await connection.BulkInsertAsync(TableNames.MetricsTable, points);
+    }
+
+    /// <summary>
+    /// Saves real-time threshold statistics during the bombing phase.
+    /// </summary>
+    /// <param name="thresholds">An array of the statistics of all the thresholds</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task SaveRealtimeThresholds(ThresholdStats[] thresholds)
+    {
+        if (thresholds.Length == 0)
+            return;
+
+        var points = MapThresholdStatsToDbRecords(thresholds, DateTime.UtcNow, OperationType.Bombing);
+
+        await using var connection = await _dataSource!.OpenConnectionAsync();
+        await connection.BulkInsertAsync(TableNames.ThresholdsTable, points);
     }
 
     /// <summary>
@@ -235,6 +254,8 @@ public class TimescaleDbSink : IReportingSink
             ? ZipArtifacts(Path.GetDirectoryName(stats.ReportFiles.First().FilePath)!)
             : [];
 
+        var thresholds = MapThresholdResultsToDbRecords(stats.Thresholds, stats.Duration, currentTime);
+
         var queryEntity = new SessionInfoDbRecord
         {
             SessionId = testInfo.SessionId,
@@ -247,8 +268,11 @@ public class TimescaleDbSink : IReportingSink
         await using var connection = await _dataSource!.OpenConnectionAsync();
         await using var ts = await connection.BeginTransactionAsync();
 
-        await connection.BinaryBulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
-        await connection.BinaryBulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
+        await connection.BulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
+        await connection.BulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
+        
+        if (thresholds.Length > 0)
+            await connection.BulkInsertAsync(TableNames.ThresholdsTable, thresholds, transaction: ts);
 
         var fields = Field.Parse<SessionInfoDbRecord>(e => new { e.SessionId, e.CurrentOperation, e.LastUpdatedTime, e.SessionResult, e.Artifacts });
         await connection.UpdateAsync(TableNames.SessionsTable, queryEntity, fields: fields, transaction: ts);
@@ -498,6 +522,46 @@ public class TimescaleDbSink : IReportingSink
             .Concat(tagsDbRecord.Scenarios.SelectMany(scn => scn.Tags))
             .Select(tag => $"{tag.Key}={tag.Value}")
             .Distinct()
+            .ToArray();
+    }
+
+    private ThresholdStatsDbRecord[] MapThresholdStatsToDbRecords(ThresholdStats[] thresholds, DateTime currentTime, OperationType currentOperation)
+    {
+        var sessionId = _context!.TestInfo.SessionId;
+
+        return thresholds
+            .Select(threshold => new ThresholdStatsDbRecord
+            {
+                Time = currentTime,
+                ScenarioTimestamp = threshold.Duration,
+                SessionId = sessionId,
+                CurrentOperation = currentOperation,
+                Scenario = threshold.ScenarioName,
+                Step = threshold.StepName,
+                CheckExpression = threshold.CheckExpression,
+                IsFailed = threshold.IsFailed
+            })
+            .ToArray();
+    }
+
+    private ThresholdStatsDbRecord[] MapThresholdResultsToDbRecords(ThresholdResult[] thresholds, TimeSpan duration, DateTime currentTime)
+    {
+        var sessionId = _context!.TestInfo.SessionId;
+
+        return thresholds
+            .Select(threshold => new ThresholdStatsDbRecord
+            {
+                Time = currentTime,
+                ScenarioTimestamp = duration,
+                SessionId = sessionId,
+                CurrentOperation = OperationType.Complete,
+                Scenario = threshold.ScenarioName,
+                Step = threshold.StepName,
+                CheckExpression = threshold.CheckExpression,
+                IsFailed = threshold.IsFailed,
+                ExceptionMsg = threshold.ExceptionMsg,
+                ErrorCount = threshold.ErrorCount
+            })
             .ToArray();
     }
 

@@ -6,6 +6,7 @@ internal static class TableNames
     public const string MetricsTable = "nb_metrics";
     public const string SessionsTable = "nb_sessions";
     public const string SessionTagKeysTable = "nb_session_tag_keys";
+    public const string ThresholdsTable = "nb_thresholds";
     public const string SchemaVersionTable = "nb_sink_schema_version";
 }
 
@@ -92,4 +93,9 @@ internal static class ColumnNames
 
     public const string SessionResult = "session_result";
     public const string Artifacts = "artifacts";
+
+    public const string CheckExpression = "check_expression";
+    public const string IsFailed = "is_failed";
+    public const string ExceptionMsg = "exception_msg";
+    public const string ErrorCount = "error_count";
 }
