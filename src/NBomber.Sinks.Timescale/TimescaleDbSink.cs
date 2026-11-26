@@ -268,9 +268,12 @@ public class TimescaleDbSink : IReportingSink
         await using var connection = await _dataSource!.OpenConnectionAsync();
         await using var ts = await connection.BeginTransactionAsync();
 
-        await connection.BulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
-        await connection.BulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
-        
+        if (stepsStats.Length > 0)
+            await connection.BulkInsertAsync(TableNames.StepStatsTable, stepsStats, transaction: ts);
+
+        if (metrics.Length > 0)
+            await connection.BulkInsertAsync(TableNames.MetricsTable, metrics, transaction: ts);
+
         if (thresholds.Length > 0)
             await connection.BulkInsertAsync(TableNames.ThresholdsTable, thresholds, transaction: ts);
 
